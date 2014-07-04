@@ -29,7 +29,15 @@ var F7U12 = function (width, target) {
 
   this.target = target;
   this.container = d3.select(target);
-  this.container.attr("class", "f7u12-grid");
+  this.container.classed("f7u12-grid", true);
+};
+
+F7U12.cell_class = function (d,i) {
+  if (d === 0) {
+    return "f7u12-cell f7u12-cell-empty";
+  } else {
+    return "f7u12-cell f7u12-cell-" + d;
+  }
 };
 
 // used internally in a few .text() calls below
@@ -39,21 +47,35 @@ F7U12.print = function (d) {
   } else {
     return "";
   }
-}
+};
 
 // render the game grid
 F7U12.prototype.render = function () {
   var game = this;
-  game.container.selectAll(".f7u12-cell")
+  var cells = game.container.selectAll(".f7u12-cell")
     .data(game.cells)
     .enter()
     .append("div")
-      .attr("class", "f7u12-cell")
+      .attr("class", F7U12.cell_class)
       .attr("data-id", function (d,i) { return i; })
       .attr("style", function (d,i) {
          if (i % game.width == 0) { return "clear: both;" }
       })
-      .text(F7U12.print);
+    .text(F7U12.print);
+
+  // set up transitions on value changes, doesn't do much yet
+  cells.transition().tween("text", function(d,i) {
+    var old = parseInt(this.textContent) || 0;
+
+    if (d === 0 && old === 0) {
+      return null;
+    }
+
+    var i = d3.interpolateRound(old, d);
+    return function(t) {
+      this.textContent = i(t);
+    };
+  });
 };
 
 // calculate the from/to coordinates for use in slide() & merge()
@@ -136,6 +158,7 @@ F7U12.prototype.slide = function (dir) {
 
   game.container.selectAll(".f7u12-cell")
     .data(updated)
+    .attr("class", F7U12.cell_class)
     .text(F7U12.print);
 
   if (dirty) {
@@ -169,6 +192,7 @@ F7U12.prototype.merge = function (dir) {
 
   game.container.selectAll(".f7u12-cell")
     .data(updated)
+    .attr("class", F7U12.cell_class)
     .text(F7U12.print);
 };
 
@@ -190,8 +214,10 @@ F7U12.prototype.move = function (dir) {
 
 // randomly insert a 2 or 4 on the grid
 F7U12.prototype.insert = function () {
+  var game = this;
+
   // make a list of all empty cells (value = 0)
-  var available = this.cells.map(function (val, i) {
+  var available = game.cells.map(function (val, i) {
     if (val == 0) {
       return i;
     }
@@ -200,10 +226,11 @@ F7U12.prototype.insert = function () {
   // shuffle the empty index list
   d3.shuffle(available);
   // take the first value and assign 2 or 4 at random
-  this.cells[available[0]] = d3.shuffle([2,4])[0];
+  game.cells[available[0]] = d3.shuffle([2,4])[0];
 
-  this.container.selectAll(".f7u12-cell")
-    .data(this.cells)
+  game.container.selectAll(".f7u12-cell")
+    .data(game.cells)
+    .attr("class", F7U12.cell_class)
     .text(F7U12.print);
 };
 
