@@ -197,19 +197,12 @@ F7U12.prototype.merge = function (dir) {
 };
 
 // TODO: cancel insert() if the board doesn't change between moves
-// TODO: tune timing or figure out how to use d3 transitions
 F7U12.prototype.move = function (dir) {
   var game = this;
   game.slide(dir);
-  setTimeout(function () {
-    game.merge(dir);
-    setTimeout(function () {
-      game.slide(dir);
-      setTimeout(function () {
-        game.insert();
-      }, 50);
-    }, 50);
-  }, 50);
+  game.merge(dir);
+  game.slide(dir);
+  game.insert();
 };
 
 // randomly insert a 2 or 4 on the grid
