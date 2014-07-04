@@ -171,8 +171,8 @@ F7U12.prototype.merge = function (dir) {
   var game = this;
 
   // track which cells have been updated and only merge them once per move
-  var touched = new Array(game.size);
-  touched.forEach(function (v,i) { touched[i] = false; });
+  var merged = new Array(game.size);
+  merged.forEach(function (v,i) { merged[i] = false; });
 
   var updated = game.cells.map(function (val, i) {
     var idxs = F7U12.next.call(game, dir, i);
@@ -181,10 +181,10 @@ F7U12.prototype.merge = function (dir) {
       return val;
     }
 
-    if (game.cells[idxs.from] == game.cells[idxs.to] && !touched[idxs.from]) {
+    if (game.cells[idxs.from] == game.cells[idxs.to] && !merged[idxs.from]) {
       game.cells[idxs.from] = 0;
       game.cells[idxs.to] = game.cells[idxs.to] * 2;
-      touched[idxs.to] = true;
+      merged[idxs.to] = true;
     }
 
     return game.cells[i];
@@ -194,9 +194,16 @@ F7U12.prototype.merge = function (dir) {
     .data(updated)
     .attr("class", F7U12.cell_class)
     .text(F7U12.print);
+
+  return merged.reduce(function (previous, current) {
+    if (current) {
+      return previous + 1;
+    } else {
+      return previous;
+    }
+  });
 };
 
-// TODO: cancel insert() if the board doesn't change between moves
 F7U12.prototype.move = function (dir) {
   var game = this;
   game.slide(dir);
