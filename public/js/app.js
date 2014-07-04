@@ -36,6 +36,11 @@ $(function() {
     }
   });
 
+  $("#player1-dpad #up"   ).on("click", function (e) { p1.move("up"); });
+  $("#player1-dpad #down" ).on("click", function (e) { p1.move("down"); });
+  $("#player1-dpad #left" ).on("click", function (e) { p1.move("left"); });
+  $("#player1-dpad #right").on("click", function (e) { p1.move("right"); });
+
   // wire the jquery swipe plugin for player 2
   $("#player2-game").swipe({
     swipe: function(event, direction, distance, duration, fingerCount, fingerData) {
@@ -43,4 +48,9 @@ $(function() {
       p2.move(direction);
     }
   });
+
+  $("#player2-dpad #up"   ).on("click", function (e) { p2.move("up"); });
+  $("#player2-dpad #down" ).on("click", function (e) { p2.move("down"); });
+  $("#player2-dpad #left" ).on("click", function (e) { p2.move("left"); });
+  $("#player2-dpad #right").on("click", function (e) { p2.move("right"); });
 });

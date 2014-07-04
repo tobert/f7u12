@@ -8,10 +8,28 @@
 	</head>
 	<body>
 		<div id="game">
-			<div class="grid" id="player1-game">
-			</div>
+      <div id="player1-container" class="game-container">
+			  <div class="grid" id="player1-game">
+			  </div>
+        <table class="dpad" id="player1-dpad">
+          <tbody>
+            <tr><td></td><td id="up" class="arrow">⇧</td><td></td></tr>
+            <tr><td id="left" class="arrow">⇦</td><td></td><td id="right" class="arrow">⇨</td></tr>
+            <tr><td></td><td id="down" class="arrow">⇩</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
 
-			<div class="grid" id="player2-game">
+      <div id="player2-container" class="game-container">
+			  <div class="grid" id="player2-game">
+        </div>
+        <table class="dpad" id="player2-dpad">
+          <tbody>
+            <tr><td></td><td id="up" class="arrow">⇧</td><td></td></tr>
+            <tr><td id="left" class="arrow">⇦</td><td></td><td id="right" class="arrow">⇨</td></tr>
+            <tr><td></td><td id="down" class="arrow">⇩</td><td></td></tr>
+          </tbody>
+        </table>
 			</div>
 		</div>
 
