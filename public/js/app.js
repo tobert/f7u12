@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * requires: jQuery swipe plugin and D3
+ * requires: f7u12, jQuery + swipe plugin, D3 3.x
  */
 
 $(function() {
