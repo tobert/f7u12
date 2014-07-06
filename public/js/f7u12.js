@@ -49,6 +49,14 @@ F7U12.print = function (d) {
   }
 };
 
+// makes a copy of the object
+F7U12.prototype.clone = function () {
+  var out = new F7U12(this.width, this.target);
+  this.cells.forEach(function (d,i) {
+    out.cells[i] = d;
+  });
+};
+
 // render the game grid
 F7U12.prototype.render = function () {
   var game = this;
@@ -80,6 +88,7 @@ F7U12.prototype.render = function () {
 
 // calculate the from/to coordinates for use in slide() & merge()
 // eol is set to true on pairs that wrap around the grid
+// 'this' is expected to be the F7U12 object
 F7U12.next = function (dir, i) {
     var out = { from: 0, to: 0, eol: false };
 
@@ -167,12 +176,13 @@ F7U12.prototype.slide = function (dir) {
 };
 
 // merge cells with matching numbers
+// returns the number of cells merged (e.g. merge(down) on 022/n022 returns 2)
 F7U12.prototype.merge = function (dir) {
   var game = this;
 
   // track which cells have been updated and only merge them once per move
   var merged = new Array(game.size);
-  merged.forEach(function (v,i) { merged[i] = false; });
+  merged.forEach(function (v,i) { merged[i] = 0; });
 
   var updated = game.cells.map(function (val, i) {
     var idxs = F7U12.next.call(game, dir, i);
@@ -184,7 +194,7 @@ F7U12.prototype.merge = function (dir) {
     if (game.cells[idxs.from] == game.cells[idxs.to] && !merged[idxs.from]) {
       game.cells[idxs.from] = 0;
       game.cells[idxs.to] = game.cells[idxs.to] * 2;
-      merged[idxs.to] = true;
+      merged[idxs.to] = game.cells[idxs.to]; // return the combined value
     }
 
     return game.cells[i];
@@ -195,21 +205,18 @@ F7U12.prototype.merge = function (dir) {
     .attr("class", F7U12.cell_class)
     .text(F7U12.print);
 
-  return merged.reduce(function (previous, current) {
-    if (current) {
-      return previous + 1;
-    } else {
-      return previous;
-    }
-  });
+  return merged.filter(function (val) { if (val > 0) { return true; } else { return false; } });
 };
 
+// collapse tiles, move, collapse again
+// returns a list of the newly merged values on the board
 F7U12.prototype.move = function (dir) {
   var game = this;
   game.slide(dir);
-  game.merge(dir);
+  var merged = game.merge(dir);
   game.slide(dir);
   game.insert();
+  return merged;
 };
 
 // randomly insert a 2 or 4 on the grid
