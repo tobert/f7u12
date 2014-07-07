@@ -17,37 +17,28 @@ package main
  */
 
 import (
-	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/gocql/gocql"
 	"log"
 	"net/http"
 )
 
-type Grid struct {
-	GridId    gocql.UUID `json:"grid_id"`   // timeuuid
-	TurnId    int        `json:"turn_id"`   // turn number
-	OffsetMs  float64    `json:"offset_ms"` // time offset from beginning of game (ms)
-	TurnMs    float64    `json:"turn_ms"`   // time elapsed between turns
-	Player    string     `json:"player"`    // arbitrary string, player name
-	Score     float32    `json:"score"`     // score at the end of the turn
-	TileVal   int        `json:"tile_val"`  // the new tile value put on the board
-	TileIdx   int        `json:"tile_idx"`  // index on the grid where the new tile was placed
-	Direction string     `json:"dir"`       // up down left right init
-	Grid      []int      `json:"grid"`      // every value in the grid
-}
-
-func (g *Grid) Save(cass *gocql.Session) error {
-	query := `INSERT INTO grids (grid_id, turn_id, offset_ms, turn_ms, player, score, tile_val, tile_idx, direction, grid) VALUES (?,?,?,?,?,?,?,?,?,?)`
-	return cass.Query(query, g.GridId, g.TurnId, g.OffsetMs, g.TurnMs, g.Player, g.Score, g.TileVal, g.TileIdx, g.Direction, g.Grid).Exec()
-}
-
+var addrFlag, cqlFlag, ksFlag string
 var cass *gocql.Session
 
+func init() {
+	flag.StringVar(&addrFlag, "addr", ":9000", "IP:PORT or :PORT address to listen on")
+	flag.StringVar(&cqlFlag, "cql", "127.0.0.1", "IP or IP:port of the Cassandra CQL service")
+	flag.StringVar(&ksFlag, "ks", "f7u12", "keyspace containing the f7u12 schema")
+}
+
 func main() {
-	cluster := gocql.NewCluster("127.0.0.1")
-	cluster.Keyspace = "f7u12"
-	cluster.Consistency = gocql.Quorum
+	flag.Parse()
+
+	cluster := gocql.NewCluster(cqlFlag)
+	cluster.Keyspace = ksFlag
+	cluster.Consistency = gocql.One
 
 	var err error
 	cass, err = cluster.CreateSession()
@@ -65,35 +56,8 @@ func main() {
 		http.ServeFile(w, r, "./public/index.html")
 	})
 
-	http.ListenAndServe(":8080", nil)
-}
-
-func GridHandler(w http.ResponseWriter, r *http.Request) {
-	g := Grid{}
-	dec := json.NewDecoder(r.Body)
-	err := dec.Decode(&g)
+	err = http.ListenAndServe(addrFlag, nil)
 	if err != nil {
-		log.Printf("PUT invalid json data: %s", err)
-		http.Error(w, fmt.Sprintf("PUT invalid json data: %s", err), 500)
+		log.Fatalf("net.http could not listen on address '%s': %s\n", addrFlag, err)
 	}
-
-	switch r.Method {
-	case "PUT":
-		err := g.Save(cass)
-		if err != nil {
-			log.Printf("Write to Cassandra failed: %s", err)
-			http.Error(w, "Write to Cassandra failed!", 500)
-		}
-	default:
-		http.Error(w, fmt.Sprintf("method '%s' not implemented", r.Method), 500)
-		return
-	}
-
-	js, err := json.Marshal(g)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(js)
 }
