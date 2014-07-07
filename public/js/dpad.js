@@ -36,7 +36,7 @@ F7U12.prototype.make_dpad = function(target) {
     .attr("class", "dpad");
 
   var tr = tbody.selectAll("tr")
-    .data(data)
+    .data(F7U12.dpad_data)
     .enter()
     .append("tr");
 
