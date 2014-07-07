@@ -66,8 +66,9 @@ $(function() {
   };
 
   var make_game = function(target) {
-    var game = new F7U12(4, target); // 4x4 grid
+    var game = new F7U12(4); // 4x4 grid
         game.init(2); // start with 2 tiles
+        game.render(target);
 
     // jquery swipe plugin
     $(target).swipe({ swipe: function(e, direction) { move(game, direction); } });
