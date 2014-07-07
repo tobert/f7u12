@@ -2,15 +2,18 @@ CREATE KEYSPACE f7u12 WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replicat
 
 use f7u12;
 
-CREATE TABLE grid (
+CREATE TABLE grids (
     grid_id   timeuuid,
-    offset_ms int,
+	turn_id   int,
+    offset_ms double,
+    turn_ms   double,
     player    text,
     score     float,
-    new_tile  int,
+    tile_val  int,
+	tile_idx  int,
     direction text,
     grid      list<int>,
-    PRIMARY KEY(grid_id, offset_ms)
+    PRIMARY KEY(grid_id, turn_id)
 );
 
 CREATE TABLE player_grid (

@@ -36,7 +36,7 @@ func main() {
 	}
 	defer cass.Close()
 
-	http.HandleFunc("/grid/", GridHandler)
+	http.HandleFunc("/grid", GridHandler)
 
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./public/js/"))))
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("./public/css/"))))

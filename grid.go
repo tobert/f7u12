@@ -21,16 +21,19 @@ import (
 )
 
 type Grid struct {
-	GridId    gocql.UUID `json:"grid_id"`
-	OffsetMs  int            `json:"offset_ms"` // time offset from beginning of game (ms)
-	Player    string         `json:"player"`    // arbitrary string
-	Score     float64        `json:"score"`
-	NewTile   int            `json:"new_tile"`
-	Direction string         `json:"dir"`
-	Grid      []int          `json:"grid"`
+	GridId    gocql.UUID `json:"grid_id"`   // timeuuid
+	TurnId    int        `json:"turn_id"`   // turn number
+	OffsetMs  float64    `json:"offset_ms"` // time offset from beginning of game (ms)
+	TurnMs    float64    `json:"turn_ms"`   // time elapsed between turns
+	Player    string     `json:"player"`    // arbitrary string, player name
+	Score     float32    `json:"score"`     // score at the end of the turn
+	TileVal   int        `json:"tile_val"`  // the new tile value put on the board
+	TileIdx   int        `json:"tile_idx"`  // index on the grid where the new tile was placed
+	Direction string     `json:"dir"`       // up down left right init
+	Grid      []int      `json:"grid"`      // every value in the grid
 }
 
 func (g *Grid) Save(cass *gocql.Session) error {
-	query := `INSERT INTO grids (grid_id, offset_ms, player, score, new_tile, direction, grid) VALUES (?,?,?,?,?,?,?)`
-	return cass.Query(query, g.GridId, g.OffsetMs, g.Player, g.Score, g.NewTile, g.Direction, g.Grid).Exec()
+	query := `INSERT INTO grids (grid_id, turn_id, offset_ms, turn_ms, player, score, tile_val, tile_idx, direction, grid) VALUES (?,?,?,?,?,?,?,?,?,?)`
+	return cass.Query(query, g.GridId, g.TurnId, g.OffsetMs, g.TurnMs, g.Player, g.Score, g.TileVal, g.TileIdx, g.Direction, g.Grid).Exec()
 }

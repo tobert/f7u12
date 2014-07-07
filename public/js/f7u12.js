@@ -21,6 +21,7 @@ var F7U12 = function (width, target) {
   this.width = width;
   this.size = width * width;
   this.last = this.size - 1;
+  this.sequence = 0;
   this.cells = new Array(this.size);
 
   for (var i=0; i<this.size; i++) {
@@ -145,7 +146,10 @@ F7U12.next = function (dir, i) {
 };
 
 // move populated tiles into unpopulated tiles in the given direction
-F7U12.prototype.slide = function (dir) {
+// calls itself recursively until there are no more moves
+// return the number of slides completed
+F7U12.prototype.slide = function (dir, prev_count) {
+  var count = prev_count || 0;
   var game = this;
   var dirty = false;
 
@@ -159,6 +163,7 @@ F7U12.prototype.slide = function (dir) {
     if (game.cells[idxs.to] == 0 && game.cells[idxs.from] > 0) {
       game.cells[idxs.to] = game.cells[idxs.from];
       game.cells[idxs.from] = 0;
+      count++;
       dirty = true;
     }
 
@@ -171,12 +176,14 @@ F7U12.prototype.slide = function (dir) {
     .text(F7U12.print);
 
   if (dirty) {
-    game.slide(dir);
+    game.slide(dir, count);
   }
+
+  return count;
 };
 
 // merge cells with matching numbers
-// returns the number of cells merged (e.g. merge(down) on 022/n022 returns 2)
+// returns a list of indices of cells merged
 F7U12.prototype.merge = function (dir) {
   var game = this;
 
@@ -209,14 +216,21 @@ F7U12.prototype.merge = function (dir) {
 };
 
 // collapse tiles, move, collapse again
-// returns a list of the newly merged values on the board
+// returns true if the board changed, false otherwise
+// does NOT insert a new piece, you must call insert()
 F7U12.prototype.move = function (dir) {
   var game = this;
-  game.slide(dir);
+
+  var slides = game.slide(dir);
   var merged = game.merge(dir);
-  game.slide(dir);
-  game.insert();
-  return merged;
+  slides += game.slide(dir);
+
+  if (slides > 0 || merged.length > 0) {
+    game.sequence++;
+    return true;
+  }
+
+  return false;
 };
 
 // randomly insert a 2 or 4 on the grid
@@ -239,12 +253,18 @@ F7U12.prototype.insert = function () {
     .data(game.cells)
     .attr("class", F7U12.cell_class)
     .text(F7U12.print);
+
+  // return the index of the inserted tile
+  return available[0];
 };
 
 // render the board with count values on it
+// returns the indexes of the tiles inserted
 F7U12.prototype.init = function (count) {
   this.render();
+  var tiles = [];
   for (var i=0; i<count; i++) {
-    this.insert();
+    tiles.push(this.insert());
   }
+  return tiles;
 };

@@ -36,15 +36,19 @@ func GridHandler(w http.ResponseWriter, r *http.Request) {
 	g := Grid{}
 	dec := json.NewDecoder(r.Body)
 	err := dec.Decode(&g)
+	if err != nil {
+		log.Printf("PUT invalid json data: %s", err)
+		http.Error(w, fmt.Sprintf("PUT invalid json data: %s", err), 500)
+	}
 
 	switch r.Method {
-	case "POST":
+	case "PUT":
 		// placeholder: log for now, add C* save later
 		log.Printf("Grid: %v\n", g)
-
+		err := g.Save(cass);
 		if err != nil {
-			log.Printf("PUT invalid json data: %s", err)
-			http.Error(w, fmt.Sprintf("PUT invalid json data: %s", err), 500)
+			log.Printf("Write to Cassandra failed: %s", err);
+			http.Error(w, "Write to Cassandra failed!", 500)
 		}
 	default:
 		http.Error(w, fmt.Sprintf("method '%s' not implemented", r.Method), 500)
