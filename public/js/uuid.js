@@ -103,7 +103,7 @@ UUIDjs.prototype.toBytes = function() {
 };
 
 UUIDjs.prototype.equals = function(uuid) {
-  if (!(uuid instanceof UUID)) {
+  if (!(uuid instanceof UUIDjs)) {
     return false;
   }
   if (this.hex !== uuid.hex) {
@@ -230,11 +230,13 @@ UUIDjs.fromBinary = function(binary) {
 
 // Aliases to support legacy code. Do not use these when writing new code as
 // they may be removed in future versions!
+/*
 UUIDjs.new = function() {
   return this.create(4);
 };
 UUIDjs.newTS = function() {
   return this.create(1);
 };
+*/
 
-module.exports = UUIDjs;
+//module.exports = UUIDjs;
