@@ -16,8 +16,8 @@
  * F7U12: A simple implementation of the 2048 game using D3.
  */
 
-// constructor: takes a width and identifier for the target div
-var F7U12 = function (width, target) {
+// constructor: takes a width
+var F7U12 = function (width) {
   this.width = width;
   this.size = width * width;
   this.last = this.size - 1;
@@ -27,10 +27,6 @@ var F7U12 = function (width, target) {
   for (var i=0; i<this.size; i++) {
     this.cells[i] = 0;
   }
-
-  this.target = target;
-  this.container = d3.select(target);
-  this.container.classed("f7u12-grid", true);
 };
 
 F7U12.cell_class = function (d,i) {
@@ -52,15 +48,20 @@ F7U12.print = function (d) {
 
 // makes a copy of the object
 F7U12.prototype.clone = function () {
-  var out = new F7U12(this.width, this.target);
+  var out = new F7U12(this.width);
   this.cells.forEach(function (d,i) {
     out.cells[i] = d;
   });
 };
 
 // render the game grid
-F7U12.prototype.render = function () {
+F7U12.prototype.render = function (target) {
   var game = this;
+
+  var pagediv = d3.select(target);
+  // not safe across multiple calls ... does it matter?
+  game.container = pagediv.append("div").classed("f7u12-grid", true);
+
   var cells = game.container.selectAll(".f7u12-cell")
     .data(game.cells)
     .enter()
