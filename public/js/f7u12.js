@@ -90,8 +90,7 @@ F7U12.prototype.render = function (target) {
 
 // calculate the from/to coordinates for use in slide() & merge()
 // eol is set to true on pairs that wrap around the grid
-// 'this' is expected to be the F7U12 object
-F7U12.next = function (dir, i) {
+F7U12.prototype.next = function (dir, i) {
     var out = { from: 0, to: 0, eol: false };
 
     // DOWN:
@@ -155,7 +154,7 @@ F7U12.prototype.slide = function (dir, prev_count) {
   var dirty = false;
 
   var updated = game.cells.map(function (val, i) {
-    var idxs = F7U12.next.call(game, dir, i);
+    var idxs = game.next(dir, i);
 
     if (idxs.eol) {
       return val;
@@ -193,7 +192,7 @@ F7U12.prototype.merge = function (dir) {
   merged.forEach(function (v,i) { merged[i] = 0; });
 
   var updated = game.cells.map(function (val, i) {
-    var idxs = F7U12.next.call(game, dir, i);
+    var idxs = game.next(dir, i);
 
     if (idxs.eol) {
       return val;
