@@ -91,8 +91,9 @@ $(function() {
   // disable default swipe events (e.g. ios overscroll)
   document.body.addEventListener('touchmove', function(event) { event.preventDefault(); }, false);
 
-  // make two grids with controls
-  [1, 2].forEach(function (pnum) {
+  // designed to have multiple players on the same touch screen
+  // for now, just one player is configured
+  [1].forEach(function (pnum) {
     var target = "#player" + pnum + "-container";
     var game = make_game(target);
 
