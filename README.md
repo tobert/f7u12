@@ -29,4 +29,5 @@ Dependencies included in this repo have their own licenses.
 
 * D3
 * jQuery TouchSwipe Plugin https://github.com/mattbryson/TouchSwipe-Jquery-Plugin
+* uuid.js https://github.com/pnegri/uuid-js
 
