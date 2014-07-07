@@ -24,7 +24,7 @@ table.dpad {
     display: inline-block;
 }
 
-table.dpad > tbody > tr > td.arrow {
+td.arrow {
     cursor: pointer;
      background-color: gray;
     color: white;
