@@ -37,9 +37,33 @@ type Grid struct {
 	Grid      []int      `json:"grid"`      // every value in the grid
 }
 
+type Grids []Grid
+
 func (g *Grid) Save(cass *gocql.Session) error {
 	query := `INSERT INTO grids (grid_id, turn_id, offset_ms, turn_ms, player, score, tile_val, tile_idx, direction, grid) VALUES (?,?,?,?,?,?,?,?,?,?)`
 	return cass.Query(query, g.GridId, g.TurnId, g.OffsetMs, g.TurnMs, g.Player, g.Score, g.TileVal, g.TileIdx, g.Direction, g.Grid).Exec()
+}
+
+func GetGrids(cass *gocql.Session, id gocql.UUID, min_turn_id, max_turn_id int) (list Grids, err error) {
+	list = make(Grids, 0)
+
+	query := `SELECT grid_id, turn_id, offset_ms, turn_ms, player, score, tile_val, tile_idx, direction, grid FROM grids WHERE grid_id=?`
+	iq := cass.Query(query, id).Iter()
+
+	for {
+		g := Grid{}
+		ok := iq.Scan(&g.GridId, &g.TurnId, &g.OffsetMs, &g.TurnMs, &g.Player, &g.Score, &g.TileVal, &g.TileIdx, &g.Direction, &g.Grid)
+		if ok {
+			list = append(list, g)
+		} else {
+			break
+		}
+	}
+	if err = iq.Close(); err != nil {
+		log.Printf("Error during Cassandra query: %s", err)
+	}
+
+	return list, err
 }
 
 func GridHandler(w http.ResponseWriter, r *http.Request) {
@@ -62,12 +86,4 @@ func GridHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("method '%s' not implemented", r.Method), 500)
 		return
 	}
-
-	js, err := json.Marshal(g)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(js)
 }
