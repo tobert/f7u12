@@ -43,8 +43,6 @@ func GridHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "PUT":
-		// placeholder: log for now, add C* save later
-		log.Printf("Grid: %v\n", g)
 		err := g.Save(cass);
 		if err != nil {
 			log.Printf("Write to Cassandra failed: %s", err);
