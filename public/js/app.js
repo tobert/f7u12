@@ -48,12 +48,11 @@ $(function() {
 
   var move = function (game, dir) {
     var changed = game.move(dir);
-    var new_tile_idx = game.insert();
-
     if (!changed) {
       return;
     }
 
+    var new_tile_idx = game.insert();
     $.ajax({
       url: "/grid",
       type: "PUT",
