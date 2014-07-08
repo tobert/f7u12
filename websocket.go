@@ -17,6 +17,7 @@ package main
  */
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gocql/gocql"
 	"github.com/gorilla/mux"
@@ -37,7 +38,7 @@ var upgrader = websocket.Upgrader{
 
 func WsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, err := gocql.ParseUUID(vars["grid_id"])
+	grid_id, err := gocql.ParseUUID(vars["grid_id"])
 	if err != nil {
 		http.Error(w, fmt.Sprintf("could not parse grid_id (uuid expected): '%s'", err), 500)
 	}
@@ -53,8 +54,16 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		for {
 			select {
 			case <-time.After(time.Second):
-				var now = time.Now();
-				var js = []byte(fmt.Sprintf("{\"time\": \"%d\", \"grid_id\": \"%s\"}\n", now.Unix(), id))
+				grids, err := GetGrids(cass, grid_id, 0, 1000)
+				if err != nil {
+					log.Printf("Cassandra query failed: %s\n", err)
+				}
+
+				js, err := json.Marshal(grids)
+				if err != nil {
+					log.Printf("JSON marshal failed: %s\n", err)
+				}
+
 				err = conn.WriteMessage(websocket.TextMessage, js)
 				if err != nil {
 					log.Printf("Failed to send %d bytes on websocket: %s", len(js), err)
