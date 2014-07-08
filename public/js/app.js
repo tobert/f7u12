@@ -79,6 +79,15 @@ $(function() {
       $(target + " #" + dir).on("click", function () { move(game, dir); });
     });
 
+    document.onkeydown = function() {
+      switch (window.event.keyCode) {
+        case 37: move(game, "left"); break;
+        case 38: move(game, "up"); break;
+        case 39: move(game, "right"); break;
+        case 40: move(game, "down"); break;
+      }
+    };
+
     // fill in some fields that are used for serializing the game
     game["score"] = 0;
     game["started"] = performance.now(); // high-res timestamp
