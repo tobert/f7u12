@@ -96,6 +96,7 @@ $(function() {
   [1].forEach(function (pnum) {
     var target = "#player" + pnum + "-container";
     var game = make_game(target);
+    start_websocket(game.uuid);
 
     // send the starting board to the server
     $.ajax({

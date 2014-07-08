@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gocql/gocql"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 )
@@ -47,16 +48,13 @@ func main() {
 	}
 	defer cass.Close()
 
-	http.HandleFunc("/grid", GridHandler)
-	http.HandleFunc("/ws", WsHandler)
+	r := mux.NewRouter()
+	r.HandleFunc("/grid", GridHandler)
+	r.HandleFunc("/ws/{grid_id:[-a-f0-9]+}", WsHandler)
 
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./public/js/"))))
-	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("./public/css/"))))
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./public/index.html")
-	})
-
+	http.Handle("/", r)
 	err = http.ListenAndServe(addrFlag, nil)
 	if err != nil {
 		log.Fatalf("net.http could not listen on address '%s': %s\n", addrFlag, err)

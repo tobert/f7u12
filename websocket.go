@@ -24,6 +24,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 )
 
 var upgrader = websocket.Upgrader{
@@ -49,12 +50,16 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: this is a stub
 	go func() {
-		// TODO: write chan receiver & timer
 		var js = []byte(fmt.Sprintf("{\"grid_id\": \"%s\"}\n", id))
-		err = conn.WriteMessage(websocket.TextMessage, js)
-		if err != nil {
-			log.Printf("Failed to send %d bytes on websocket: %s", len(js), err)
-			return
+		for {
+			select {
+			case <-time.After(time.Second):
+				err = conn.WriteMessage(websocket.TextMessage, js)
+				if err != nil {
+					log.Printf("Failed to send %d bytes on websocket: %s", len(js), err)
+					return
+				}
+			}
 		}
 	}()
 
