@@ -17,6 +17,7 @@
 // break with style for now - get it working ...
 function start_websocket(grid_id) {
   var sock = new WebSocket("ws://" + window.location.host + "/ws/" + grid_id);
+  var lines = new Array(128);
 
   sock.onerror = function (e) {
     console.log("socket error", e);
@@ -36,13 +37,16 @@ function start_websocket(grid_id) {
     sock.onmessage = function(msg) {
       console.log("Message: ", msg.data);
 
+      lines.push(msg.data.replace(/[\r\n]+/, " "));
+      if (lines.length == 128) {
+        lines.shift();
+      }
+
       ta.each(function () {
-        var lines = this.value.split(/[\r\n]]/);
-        lines.push(msg.data);
-        if (lines.length > 128) {
-          lines.shift();
-        }
         this.value = lines.join("\r\n");
+        // TODO: needs a pause indicator so users can scroll back
+        // maybe make it automatic on scrollback ...
+        this.scrollTop = this.scrollHeight;
       });
     };
   };

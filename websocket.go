@@ -50,10 +50,11 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: this is a stub
 	go func() {
-		var js = []byte(fmt.Sprintf("{\"grid_id\": \"%s\"}\n", id))
 		for {
 			select {
 			case <-time.After(time.Second):
+				var now = time.Now();
+				var js = []byte(fmt.Sprintf("{\"time\": \"%d\", \"grid_id\": \"%s\"}\n", now.Unix(), id))
 				err = conn.WriteMessage(websocket.TextMessage, js)
 				if err != nil {
 					log.Printf("Failed to send %d bytes on websocket: %s", len(js), err)
