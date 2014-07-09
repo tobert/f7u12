@@ -20,32 +20,6 @@
  */
 
 $(function() {
-  var serialize = function (game, dir, tile_idx) {
-    var now = performance.now();
-
-    var tile_val = 0;
-    if (tile_idx != null) {
-       tile_val = game.cells[tile_idx];
-    }
-
-    var out = {
-      "grid_id":   game.uuid,
-      "turn_id":   game.sequence,
-      "offset_ms": now - game.started,
-      "turn_ms":   now - game.last_turn,
-      "player":    game.target, // temp, replace with text box
-      "score":     game.score,
-      "tile_val":  tile_val,
-      "tile_idx":  tile_idx,
-      "dir":       dir,
-      "grid":      game.cells
-    };
-
-    console.log(out);
-
-    return JSON.stringify(out);
-  };
-
   var move = function (game, dir) {
     var changed = game.move(dir);
     if (!changed) {
@@ -57,7 +31,7 @@ $(function() {
       url: "/grid",
       type: "PUT",
       dataType: "json",
-      data: serialize(game, dir, new_tile_idx),
+      data: game.serialize(),
       success: function () { console.log("XHR Succeeded."); }
     });
 
@@ -87,10 +61,7 @@ $(function() {
       }
     };
 
-    // fill in some fields that are used for serializing the game
-    game["score"] = 0;
-    game["started"] = performance.now(); // high-res timestamp
-    game["last_turn"] = performance.now();
+    game["score"] = 0; // TODO: implement scoring
     game["uuid"] = UUIDjs.create(1).toString();
 
     return game;
@@ -104,6 +75,7 @@ $(function() {
   [1].forEach(function (pnum) {
     var target = "#player" + pnum + "-container";
     var game = make_game(target);
+        game.set_name("player" + pnum);
     start_websocket(game.uuid);
 
     // send the starting board to the server
@@ -111,7 +83,7 @@ $(function() {
       url: "/grid",
       type: "PUT",
       dataType: "json",
-      data: serialize(game, null, null),
+      data: game.serialize(null, null),
       success: function () { console.log("Game init succeeded."); }
     });
   });

@@ -14,6 +14,7 @@
  * limitations under the License.
  *
  * F7U12: A simple implementation of the 2048 game using D3.
+ * Uses performance.now() for timings, might break on older browsers.
  */
 
 // constructor: takes a width
@@ -23,6 +24,8 @@ var F7U12 = function (width) {
   this.last = this.size - 1;
   this.sequence = 0;
   this.cells = new Array(this.size);
+  this.started = performance.now();
+  this.last_turn = this.started;
 
   for (var i=0; i<this.size; i++) {
     this.cells[i] = 0;
@@ -227,6 +230,14 @@ F7U12.prototype.move = function (dir) {
 
   if (slides > 0 || merged.length > 0) {
     game.sequence++;
+
+    // update game metrics
+    var now = performance.now();
+    game.turn_ms = now - game.last_turn;
+    game.offset_ms = now - game.started;
+    game.last_turn = now;
+    game.latest_dir = dir;
+
     return true;
   }
 
@@ -254,8 +265,39 @@ F7U12.prototype.insert = function () {
     .attr("class", F7U12.cell_class)
     .text(F7U12.print);
 
+  // serialize() saves these values, handy for replays, etc.
+  game.latest_tile_idx = available[0];
+  game.latest_tile_value = game.cells[available[0]];
+
   // return the index of the inserted tile
   return available[0];
+};
+
+// set the name of the game / player, an arbitrary string
+F7U12.prototype.set_name = function (name) {
+  this.name = name;
+};
+
+// grabs the latest game state stored in the game object and returns JSON
+// since F7U12 doesn't implement score directly, it will always
+// be 0 unless you set it.
+F7U12.prototype.serialize = function () {
+  var game = this;
+
+  var out = {
+    "grid_id":   game.uuid || "00000000-0000-0000-0000-000000000000",
+    "turn_id":   game.sequence,
+    "offset_ms": game.offset_ms,
+    "turn_ms":   game.turn_ms,
+    "player":    game.name,
+    "score":     game.score,
+    "tile_val":  game.latest_tile_value,
+    "tile_idx":  game.latest_tile_idx,
+    "dir":       game.latest_dir,
+    "grid":      game.cells
+  };
+
+  return JSON.stringify(out);
 };
 
 // render the board with count values on it
