@@ -1,2 +1,15 @@
 *.swp
 *.bak
+
+*.class
+*.log
+
+# sbt specific
+spark/target/
+spark/lib_managed/
+spark/src_managed/
+spark/project/
+
+# Scala-IDE specific
+.scala_dependencies
+.worksheet
