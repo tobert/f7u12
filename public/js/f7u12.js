@@ -59,6 +59,10 @@ F7U12.prototype.clone = function () {
   return out;
 };
 
+F7U12.prototype.clear = function (target) {
+  d3.select(target).selectAll(".f7u12-grid").remove();
+};
+
 // render the game grid
 F7U12.prototype.render = function (target) {
   var game = this;
