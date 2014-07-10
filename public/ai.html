@@ -30,7 +30,11 @@
     <script src="js/websocket.js"></script>
     <script src="js/ai.js"></script>
     <script>
-      $("#run-button").on("click", function () { F7U12.run(); });
+      $("#run-button").on("click", function () {
+        var game = F7U12.run();
+        d3.select("#player1-container").html("");
+        game.render("#player1-container");
+      });
     </script>
   </body>
 </html>

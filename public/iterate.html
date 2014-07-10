@@ -12,7 +12,7 @@
 </head>
 
 <body>
-    <div class="container">
+    <div class="container-fluid">
       <form class="form-inline" role="form">
          <div class="form-group">
            <button type="button" id="run-button" data-loading-text="Running..." class="btn btn-primary">
@@ -40,8 +40,9 @@
          var iters = d3.select("#iterations").node().value;
          for (var i=1; i<=iters; i++) {
            var start = performance.now();
-           F7U12.run();
+           var game = F7U12.run();
            console.log("iteration " + i + "/" + iters, " took ", performance.now() - start);
+           game.render("#player1-container");
          }
       });
     </script>

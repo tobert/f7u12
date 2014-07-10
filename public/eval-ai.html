@@ -88,7 +88,15 @@ if (!game.can_move("up")) {
       $("#run-button").on("click", function () {
          var fun = Function("game", "iteration", editor.getValue());
          console.log(fun);
-         F7U12.run_ai_fun(fun);
+
+         var game = F7U12.run_ai_fun(fun);
+
+         d3.select("#log-container")
+           .append("span")
+           .html("<pre><code>" + game.serialize() + "</code></pre>");
+
+         game.clear("#player1-container");
+         game.render("#player1-container");
       });
     </script>
   </body>
