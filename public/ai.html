@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>fffffffuuuuuuuuuuuu</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="@AlTobey">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="css/f7u12.css" />
+    <link rel="stylesheet" href="css/app.css" />
+</head>
+
+<body>
+    <div class="container">
+      <button type="button" id="run-button" data-loading-text="Running..." class="btn btn-primary">
+        Run AI! <span class="glyphicon glyphicon-fast-forward"></span>
+      </button>
+
+      <div id="player1-container"></div>
+    </div>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script src="js/jquery.touchSwipe.min.js"></script>
+    <script src="js/d3.v3.min.js"></script>
+    <script src="js/f7u12.js"></script>
+    <script src="js/dpad.js"></script>
+    <script src="js/uuid.js"></script>
+    <script src="js/websocket.js"></script>
+    <script src="js/ai.js"></script>
+    <script>
+      $("#run-button").on("click", function () { F7U12.run(); });
+    </script>
+  </body>
+</html>
