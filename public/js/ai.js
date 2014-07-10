@@ -29,7 +29,6 @@ $(function() {
     var new_tile_idx = game.insert();
     $.ajax({
       url: "/grid",
-      async: false,
       type: "PUT",
       data: game.serialize(),
       success: function () { console.log("XHR Succeeded."); }
@@ -75,18 +74,14 @@ $(function() {
 
   // export for loops, etc.
   F7U12.run = function () {
-    d3.select("#player1-container").selectAll("div").remove();
-
     var game = new F7U12(4); // 4x4 grid
         game.init(2); // start with 2 tiles
         game.set_name("AI");
         game.uuid = UUIDjs.create(1).toString();
-        game.render("#player1-container");
 
     // send the starting board to the server
     $.ajax({
       url: "/grid",
-      async: false,
       type: "PUT",
       data: game.serialize(null, null),
       success: function () { console.log("Game init succeeded."); }
@@ -95,5 +90,7 @@ $(function() {
     while (!game.over()) {
       naive_mover(game);
     }
+
+    return game;
   };
 });

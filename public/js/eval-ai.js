@@ -38,14 +38,10 @@ $(function() {
   // monkey patch this in so it can be run from the script in the HTML
   // TODO: find a cleaner way to expose this ...
   F7U12.run_ai_fun = function (fun) {
-    d3.select("#player1-container").selectAll("div").remove();
-
     var game = new F7U12(4); // 4x4 grid
         game.init(2); // start with 2 tiles
         game.set_name("AI");
         game.uuid = UUIDjs.create(1).toString();
-        game.render("#player1-container");
-        start_websocket(game.uuid, "#log-container");
 
     // send the starting board to the server
     $.ajax({
@@ -64,5 +60,7 @@ $(function() {
       // calls fun() with this = game, arg0: game, arg1: iteration number
       fun.call(game, game, iter);
     }
+
+    return game;
   };
 });
