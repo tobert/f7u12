@@ -76,7 +76,7 @@ $(function() {
     var target = "#player" + pnum + "-container";
     var game = make_game(target);
         game.set_name("player" + pnum);
-    start_websocket(game.uuid);
+    start_websocket(game.uuid, target);
 
     // send the starting board to the server
     $.ajax({

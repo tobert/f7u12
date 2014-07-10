@@ -15,7 +15,7 @@
  */
 
 // break with style for now - get it working ...
-function start_websocket(grid_id) {
+function start_websocket(grid_id, target) {
   var sock = new WebSocket("ws://" + window.location.host + "/ws/" + grid_id);
 
   sock.onerror = function (e) {
@@ -23,7 +23,7 @@ function start_websocket(grid_id) {
   };
 
   sock.onopen = function (e) {
-    var panel = d3.select("#player1-container")
+    var panel = d3.select(target)
       .append("div")
       .attr("class", "ws-panel")
       .attr("id", "player1-ws-panel");
