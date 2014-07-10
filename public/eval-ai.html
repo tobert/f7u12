@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>fffffffuuuuuuuuuuuu</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="@AlTobey">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="css/f7u12.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <style type="text/css" media="screen">
+      #editor {
+        width: 800px;
+        height: 600px;;
+      }
+    </style>
+</head>
+
+<body>
+  <div class="container-fluid">
+    <div class="row"><div class="col-sm-12">
+      <button type="button" id="run-button" data-loading-text="Running..." class="btn btn-primary">
+        Run AI! <span class="glyphicon glyphicon-fast-forward"></span>
+      </button>
+    </div></div>
+    <div class="row">
+      <div class="col-sm-4">
+        <div id="player1-container"></div>
+      </div>
+      <div class="col-sm-8">
+        <div id="editor" style="float: left;">
+if (!game.can_move("up")) {
+  // when both left and right are possible, choose the one that merges the most cells
+  if (game.can_move("right") && game.can_move("left")) {
+    var left_up = game.clone();
+        left_up.move("left");
+        left_up.move("up");
+
+    var right_up = game.clone();
+        right_up.move("right");
+        right_up.move("up");
+
+    if (left_up.empty_cells() > right_up.empty_cells()) {
+      game.mv("left");
+    } else {
+      game.mv("right");
+    }
+  // try left
+  } else if (game.mv("left")) {
+    return;
+  // try right
+  } else if (game.mv("right")) {
+    return;
+  // when all else fails, down
+  } else {
+    game.mv("down");
+  }
+// always move up when you can
+} else {
+  game.mv("up");
+}
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-12" id="log-container"></div>
+    </div>
+  </div>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script src="js/jquery.touchSwipe.min.js"></script>
+    <script src="js/d3.v3.min.js"></script>
+    <script src="js/f7u12.js"></script>
+    <script src="js/uuid.js"></script>
+    <script src="js/websocket.js"></script>
+    <script src="js/eval-ai.js"></script>
+
+    <script src="js/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/ace/mode-javascript.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/ace/worker-javascript.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+      var editor = ace.edit("editor");
+          editor.getSession().setMode("ace/mode/javascript");
+          editor.setTheme("ace/theme/xcode");
+
+      $("#run-button").on("click", function () {
+         var fun = Function("game", "iteration", editor.getValue());
+         console.log(fun);
+         F7U12.run_ai_fun(fun);
+      });
+    </script>
+  </body>
+</html>
