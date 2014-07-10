@@ -19,6 +19,7 @@
 
 // constructor: takes a width
 var F7U12 = function (width) {
+  this.visible = false;
   this.width = width;
   this.size = width * width;
   this.last = this.size - 1;
@@ -55,11 +56,13 @@ F7U12.prototype.clone = function () {
   this.cells.forEach(function (d,i) {
     out.cells[i] = d;
   });
+  return out;
 };
 
 // render the game grid
 F7U12.prototype.render = function (target) {
   var game = this;
+      game.visible = true;
 
   var pagediv = d3.select(target);
   // not safe across multiple calls ... does it matter?
@@ -173,10 +176,12 @@ F7U12.prototype.slide = function (dir, prev_count) {
     return game.cells[i];
   });
 
-  game.container.selectAll(".f7u12-cell")
-    .data(updated)
-    .attr("class", F7U12.cell_class)
-    .text(F7U12.print);
+  if (game.visible) {
+    game.container.selectAll(".f7u12-cell")
+      .data(updated)
+      .attr("class", F7U12.cell_class)
+      .text(F7U12.print);
+  }
 
   if (dirty) {
     game.slide(dir, count);
@@ -210,10 +215,12 @@ F7U12.prototype.merge = function (dir) {
     return game.cells[i];
   });
 
-  game.container.selectAll(".f7u12-cell")
-    .data(updated)
-    .attr("class", F7U12.cell_class)
-    .text(F7U12.print);
+  if (game.visible) {
+    game.container.selectAll(".f7u12-cell")
+      .data(updated)
+      .attr("class", F7U12.cell_class)
+      .text(F7U12.print);
+  }
 
   return merged.filter(function (val) { if (val > 0) { return true; } else { return false; } });
 };
@@ -244,11 +251,56 @@ F7U12.prototype.move = function (dir) {
   return false;
 };
 
+// returns true if moving <dir> will change the board
+F7U12.prototype.can_move = function (dir) {
+  // make a clone of the game and throw it away
+  var game = this.clone();
+
+  // same code as move() but without the metrics
+  var slides = game.slide(dir);
+  var merged = game.merge(dir);
+  slides += game.slide(dir);
+
+  if (slides > 0 || merged.length > 0) {
+    return true;
+  }
+
+  return false;
+};
+
+// probably slow, esp on bigger boards, but good enough for now
+F7U12.prototype.over = function () {
+  var game = this;
+
+  if (game.can_move("up")) {
+     return false;
+  } else if (game.can_move("down")) {
+     return false;
+  } else if (game.can_move("left")) {
+     return false;
+  } else if (game.can_move("right")) {
+     return false;
+  } else {
+     return true;
+  }
+};
+
+// returns the number of empty cells on the board
+F7U12.prototype.empty_cells = function () {
+  return this.cells.reduce(function (pv, cv) {
+      if (cv == 0) {
+          return pv + 1;
+      } else {
+          return pv;
+      }
+  });
+};
+
 // randomly insert a 2 or 4 on the grid
 F7U12.prototype.insert = function () {
   var game = this;
 
-  // make a list of all empty cells (value = 0)
+  // make a list of all empty cells' (value = 0) indexes
   var available = game.cells.map(function (val, i) {
     if (val == 0) {
       return i;
@@ -260,10 +312,12 @@ F7U12.prototype.insert = function () {
   // take the first value and assign 2 or 4 at random
   game.cells[available[0]] = d3.shuffle([2,4])[0];
 
-  game.container.selectAll(".f7u12-cell")
-    .data(game.cells)
-    .attr("class", F7U12.cell_class)
-    .text(F7U12.print);
+  if (game.visible) {
+    game.container.selectAll(".f7u12-cell")
+      .data(game.cells)
+      .attr("class", F7U12.cell_class)
+      .text(F7U12.print);
+  }
 
   // serialize() saves these values, handy for replays, etc.
   game.latest_tile_idx = available[0];
