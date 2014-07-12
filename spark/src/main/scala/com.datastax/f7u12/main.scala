@@ -18,15 +18,27 @@ package com.datastax.f7u12
  */
 
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkContext._ // implicit conversions
+import org.apache.spark.storage.StorageLevel._
 import com.datastax.driver.spark._
+import java.lang.Math
 
+// get the count of games that have a 1024 tile
 object F7u12 {
   def main(args: Array[String]) {
 		val conf = new SparkConf()
 		conf.set("cassandra.connection.host", "127.0.0.1")
+		conf.set("cassandra.connection.keep_alive_ms", "60000")
 		val sc = new SparkContext("local[4]", "F7U12", conf)
 
 		val grids = sc.cassandraTable("f7u12", "grids")
-		grids.count
+
+		// (grid_id, [tiles...])
+		val tiles = grids.map(g => (g.get[String]("grid_id"), g.getList[Int]("grid")))
+
+		// (grid_id, max_tile_value]
+		val max_tiles = tiles.map(row => (row._1, row._2.reduce((a,b) => Math.max(a,b))))
+
+		val count = max_tiles.filter(r => r._2 == 1024).count
   }
 }
