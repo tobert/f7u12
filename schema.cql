@@ -21,3 +21,11 @@ CREATE TABLE player_game (
     game_id timeuuid,
     PRIMARY KEY(player, game_id)
 );
+
+CREATE TABLE top_games (
+	dimension text,
+	rank      int,
+	game_id   timeuuid,
+	PRIMARY KEY(dimension, rank, game_id)
+);
+
