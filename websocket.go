@@ -38,9 +38,9 @@ var upgrader = websocket.Upgrader{
 
 func WsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	grid_id, err := gocql.ParseUUID(vars["grid_id"])
+	game_id, err := gocql.ParseUUID(vars["game_id"])
 	if err != nil {
-		http.Error(w, fmt.Sprintf("could not parse grid_id (uuid expected): '%s'", err), 500)
+		http.Error(w, fmt.Sprintf("could not parse game_id (uuid expected): '%s'", err), 500)
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -54,12 +54,12 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		for {
 			select {
 			case <-time.After(time.Second):
-				grids, err := GetGrids(cass, grid_id, 0, 1000)
+				game, err := GetGame(cass, game_id)
 				if err != nil {
 					log.Printf("Cassandra query failed: %s\n", err)
 				}
 
-				js, err := json.Marshal(grids)
+				js, err := json.Marshal(game)
 				if err != nil {
 					log.Printf("JSON marshal failed: %s\n", err)
 				}

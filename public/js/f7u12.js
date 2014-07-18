@@ -343,7 +343,7 @@ F7U12.prototype.serialize = function () {
   var game = this;
 
   var out = {
-    "grid_id":   game.uuid || "00000000-0000-0000-0000-000000000000",
+    "game_id":   game.uuid || "00000000-0000-0000-0000-000000000000",
     "turn_id":   game.sequence,
     "offset_ms": game.offset_ms,
     "turn_ms":   game.turn_ms,
@@ -352,7 +352,7 @@ F7U12.prototype.serialize = function () {
     "tile_val":  game.latest_tile_value,
     "tile_idx":  game.latest_tile_idx,
     "dir":       game.latest_dir,
-    "grid":      game.cells
+    "state":     game.cells
   };
 
   return JSON.stringify(out);

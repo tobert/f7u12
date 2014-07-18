@@ -25,7 +25,7 @@ import (
 )
 
 type Grid struct {
-	GridId    gocql.UUID `json:"grid_id"`   // timeuuid
+	GameId    gocql.UUID `json:"game_id"`   // timeuuid
 	TurnId    int        `json:"turn_id"`   // turn number
 	OffsetMs  float64    `json:"offset_ms"` // time offset from beginning of game (ms)
 	TurnMs    float64    `json:"turn_ms"`   // time elapsed between turns
@@ -34,25 +34,25 @@ type Grid struct {
 	TileVal   int        `json:"tile_val"`  // the new tile value put on the board
 	TileIdx   int        `json:"tile_idx"`  // index on the grid where the new tile was placed
 	Direction string     `json:"dir"`       // up down left right init
-	Grid      []int      `json:"grid"`      // every value in the grid
+	State     []int      `json:"state"`     // every value in the grid
 }
 
-type Grids []Grid
+type Game []Grid
 
 func (g *Grid) Save(cass *gocql.Session) error {
-	query := `INSERT INTO grids (grid_id, turn_id, offset_ms, turn_ms, player, score, tile_val, tile_idx, direction, grid) VALUES (?,?,?,?,?,?,?,?,?,?)`
-	return cass.Query(query, g.GridId, g.TurnId, g.OffsetMs, g.TurnMs, g.Player, g.Score, g.TileVal, g.TileIdx, g.Direction, g.Grid).Exec()
+	query := `INSERT INTO grids (game_id, turn_id, offset_ms, turn_ms, player, score, tile_val, tile_idx, direction, state) VALUES (?,?,?,?,?,?,?,?,?,?)`
+	return cass.Query(query, g.GameId, g.TurnId, g.OffsetMs, g.TurnMs, g.Player, g.Score, g.TileVal, g.TileIdx, g.Direction, g.State).Exec()
 }
 
-func GetGrids(cass *gocql.Session, id gocql.UUID, min_turn_id, max_turn_id int) (list Grids, err error) {
-	list = make(Grids, 0)
+func GetGame(cass *gocql.Session, id gocql.UUID) (list Game, err error) {
+	list = make(Game, 0)
 
-	query := `SELECT grid_id, turn_id, offset_ms, turn_ms, player, score, tile_val, tile_idx, direction, grid FROM grids WHERE grid_id=?`
+	query := `SELECT game_id, turn_id, offset_ms, turn_ms, player, score, tile_val, tile_idx, direction, state FROM grids WHERE game_id=?`
 	iq := cass.Query(query, id).Iter()
 
 	for {
 		g := Grid{}
-		ok := iq.Scan(&g.GridId, &g.TurnId, &g.OffsetMs, &g.TurnMs, &g.Player, &g.Score, &g.TileVal, &g.TileIdx, &g.Direction, &g.Grid)
+		ok := iq.Scan(&g.GameId, &g.TurnId, &g.OffsetMs, &g.TurnMs, &g.Player, &g.Score, &g.TileVal, &g.TileIdx, &g.Direction, &g.State)
 		if ok {
 			list = append(list, g)
 		} else {
