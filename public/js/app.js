@@ -35,10 +35,16 @@ $(function() {
       success: function () { console.log("XHR Succeeded."); }
     });
 
+    game.score_div.text("Score: " + game.score);
+
     game.last_turn = performance.now();
   };
 
   var make_game = function(target) {
+     var score_div = d3.select(target).append("div")
+       .attr("class", "f7u12-score")
+       .text("Score: 0");
+
     var game = new F7U12(4); // 4x4 grid
         game.init(2); // start with 2 tiles
         game.render(target);
@@ -61,8 +67,9 @@ $(function() {
       }
     };
 
-    game["score"] = 0; // TODO: implement scoring
+    game["score"] = 0;
     game["uuid"] = UUIDjs.create(1).toString();
+    game["score_div"] = score_div;
 
     return game;
   };

@@ -198,6 +198,7 @@ F7U12.prototype.slide = function (dir, prev_count) {
 // returns a list of indices of cells merged
 F7U12.prototype.merge = function (dir) {
   var game = this;
+  var score = 0;
 
   // track which cells have been updated and only merge them once per move
   var merged = new Array(game.size);
@@ -213,11 +214,14 @@ F7U12.prototype.merge = function (dir) {
     if (game.cells[idxs.from] == game.cells[idxs.to] && !merged[idxs.from]) {
       game.cells[idxs.from] = 0;
       game.cells[idxs.to] = game.cells[idxs.to] * 2;
+      score += game.cells[idxs.to];
       merged[idxs.to] = game.cells[idxs.to]; // return the combined value
     }
 
     return game.cells[i];
   });
+
+  game.score += score;
 
   if (game.visible) {
     game.container.selectAll(".f7u12-cell")
