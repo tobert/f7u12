@@ -40,6 +40,12 @@ type Grid struct {
 type Game []Grid
 
 func (g *Grid) Save(cass *gocql.Session) error {
+	// update the index on every insert because why not
+	err := cass.Query(`INSERT INTO player_game (player, game_id) VALUES (?,?)`, g.Player, g.GameId).Exec()
+	if err != nil {
+		return err
+	}
+
 	query := `INSERT INTO grids (game_id, turn_id, offset_ms, turn_ms, player, score, tile_val, tile_idx, direction, state) VALUES (?,?,?,?,?,?,?,?,?,?)`
 	return cass.Query(query, g.GameId, g.TurnId, g.OffsetMs, g.TurnMs, g.Player, g.Score, g.TileVal, g.TileIdx, g.Direction, g.State).Exec()
 }
