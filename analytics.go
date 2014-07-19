@@ -89,7 +89,23 @@ func GetRecentGames(cass *gocql.Session) (games PlayerGames, err error) {
 	return games, err
 }
 
-// GET /top_games?dimension=ai_topN
+// GET /recent
+func RecentGamesHandler(w http.ResponseWriter, r *http.Request) {
+	games, err := GetRecentGames(cass)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cassandra query failed: %s", err), 500)
+		return
+	}
+
+	json, err := json.Marshal(games)
+	if err != nil {
+		log.Printf("JSON marshal failed: %s\n", err)
+		http.Error(w, fmt.Sprintf("Marshaling JSON failed: %s", err), 500)
+	}
+
+	w.Write(json)
+}
+
 func GetTopGames(cass *gocql.Session, dimension string) (tgs TopGames, err error) {
 	tgs = make(TopGames, 0)
 
@@ -112,6 +128,7 @@ func GetTopGames(cass *gocql.Session, dimension string) (tgs TopGames, err error
 	return
 }
 
+// GET /top_games/ai_topN
 func TopGamesHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	tgs, err := GetTopGames(cass, vars["dimension"])
@@ -121,22 +138,6 @@ func TopGamesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json, err := json.Marshal(tgs)
-	if err != nil {
-		log.Printf("JSON marshal failed: %s\n", err)
-		http.Error(w, fmt.Sprintf("Marshaling JSON failed: %s", err), 500)
-	}
-
-	w.Write(json)
-}
-
-func RecentGamesHandler(w http.ResponseWriter, r *http.Request) {
-	games, err := GetRecentGames(cass)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Cassandra query failed: %s", err), 500)
-		return
-	}
-
-	json, err := json.Marshal(games)
 	if err != nil {
 		log.Printf("JSON marshal failed: %s\n", err)
 		http.Error(w, fmt.Sprintf("Marshaling JSON failed: %s", err), 500)
@@ -166,6 +167,7 @@ func GetCounts(cass *gocql.Session) (counts Counts, err error) {
 	return counts, err
 }
 
+// GET /counts
 func CountsHandler(w http.ResponseWriter, r *http.Request) {
 	counts, err := GetCounts(cass)
 	if err != nil {
