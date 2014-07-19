@@ -38,7 +38,7 @@ CREATE TABLE counts (
 
 CREATE TABLE dir_counts (
     game_id timeuuid,
-    counts  map<string,int>,
+    counts  map<text,int>,
     PRIMARY KEY(game_id)
 );
 
