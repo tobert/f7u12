@@ -24,9 +24,6 @@ import com.datastax.spark.connector._
 import java.lang.Math
 import java.util
 
-// spark/blob/master/sql/catalyst/src/main/scala/org/apache/spark/sql/catalyst/ScalaReflection.scala
-// needs support for java.util.UUID or MatchError, using String for now
-
 object F7U12 {
   case class Grid (
     GameId:    java.util.UUID,
@@ -41,31 +38,38 @@ object F7U12 {
     State:     List[Int]
   );
 
+	// define an ordering to sort by score
+	val order_by_score = Ordering.by[(java.util.UUID, Float), Float](_._2)
+
   def main(args: Array[String]) {
     val conf = new SparkConf()
     conf.set("cassandra.connection.host", "zorak")
     conf.set("cassandra.connection.keep_alive_ms", "60000")
     val sc = new SparkContext("local[4]", "F7U12", conf)
 
-    val grids = sc.cassandraTable[Grid]("f7u12", "grids")
+    val grids = sc.cassandraTable[Grid]("f7u12", "grids") //.cache
 
 		// xform grids into a kv rdd and ask for it to be cached
-		val games = grids.map(g => (g.GameId, g)).cache
+		val games = grids.map(g => (g.GameId, g))
 
 		// get the final grid of each game by finding the max turn id
 		val final_grids = games.reduceByKey((a,b) => (if (a.TurnId > b.TurnId) a else b))
 
-		val moves_made = games.count
+		// split out AI games, then find the top 10 scores
+		val ai_games  = final_grids.filter(g => (g._2.Player.getOrElse[String]("Unknown") == "AI"))
+		val ai_scores = ai_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
+		val ai_top10 = ai_scores.takeOrdered(10)(order_by_score.reverse)
+		val ai_moves = ai_games.map(g => (g._2.TurnId)).reduce(_ + _)
 
-		// count how many games were played
-		// TODO: is there a more efficient way to do this?
-		val games_played = final_grids.count
+		// split out non-AI games, find some other things, including top 10
+		val human_games = final_grids.filter(g => (g._2.Player.getOrElse[String]("Unknown") != "AI"))
+		val human_scores = human_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
+		val human_top10 = human_scores.takeOrdered(10)(order_by_score.reverse)
+		val human_moves = human_games.map(g => (g._2.TurnId)).reduce(_ + _)
 
-		final_grids.map(game => (game._1, (game._2.Score.getOrElse[Float](0)))).collect
-
-    //val tiles = grids.map(g => (g.GridId, g))
-    // (grid_id, max_tile_value)
-    //val max_tiles = tiles.map(row => (row._1, row._2.reduce((a,b) => Math.max(a,b))))
-    //val count = max_tiles.filter(r => r._2 == 1024).count
+		// analyze human move latency
+		val human_grids = grids.filter(g => (g.Player.getOrElse[String]("Unknown") != "AI")).collect
+		val human_move_lat = human_grids.map(g => (g.Player, g.TurnMs))
   }
 }
+
