@@ -91,7 +91,7 @@ object F7U12 {
     // get per-game move counts
     val game_dirs = games.filter(g => g._2.Direction != "").groupByKey().map(g => Seq(g._1, g._2.groupBy(_.Direction).map(g => (g._1, g._2.count(_ => true)))))
         // one more map to transform Seq() to tuple
-        game_dirs.map(gd => (gd(0),gd(1))).saveToCassandra("f7u12", "game_dir_counts", Seq("game_id", "counts"))
+        game_dirs.map(gd => (gd(0),gd(1))).saveToCassandra("f7u12", "dir_counts", Seq("game_id", "counts"))
 
     // count the directions globally
     val all_dir_counts = grids.filter(g => g.Direction != "").map(g => (g.Direction, 1)).reduceByKey(_+_)
