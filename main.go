@@ -53,7 +53,7 @@ func main() {
 	r.HandleFunc("/counts", CountsHandler)
 	r.HandleFunc("/recent", RecentGamesHandler)
 	r.HandleFunc("/top_games/{dimension:[-_a-zA-Z0-9]+}", TopGamesHandler)
-	r.HandleFunc("/ws/{grid_id:[-a-f0-9]+}", WsHandler)
+	r.HandleFunc("/ws/{game_id:[-a-f0-9]+}", WsHandler)
 
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
 
