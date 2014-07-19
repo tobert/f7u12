@@ -41,6 +41,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	game_id, err := gocql.ParseUUID(vars["game_id"])
 	if err != nil {
 		http.Error(w, fmt.Sprintf("could not parse game_id (uuid expected): '%s'", err), 500)
+		return
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
