@@ -38,8 +38,8 @@ object F7U12 {
     State:     List[Int]
   );
 
-	// define an ordering to sort by score
-	val order_by_score = Ordering.by[(java.util.UUID, Float), Float](_._2)
+  // define an ordering to sort by score
+  val order_by_score = Ordering.by[(java.util.UUID, Float), Float](_._2)
 
   def main(args: Array[String]) {
     val conf = new SparkConf()
@@ -49,27 +49,28 @@ object F7U12 {
 
     val grids = sc.cassandraTable[Grid]("f7u12", "grids") //.cache
 
-		// xform grids into a kv rdd and ask for it to be cached
-		val games = grids.map(g => (g.GameId, g))
+    // xform grids into a kv rdd and ask for it to be cached
+    val games = grids.map(g => (g.GameId, g))
 
-		// get the final grid of each game by finding the max turn id
-		val final_grids = games.reduceByKey((a,b) => (if (a.TurnId > b.TurnId) a else b))
+    // get the final grid of each game by finding the max turn id
+    val final_grids = games.reduceByKey((a,b) => (if (a.TurnId > b.TurnId) a else b))
 
-		// split out AI games, then find the top 10 scores
-		val ai_games  = final_grids.filter(g => (g._2.Player.getOrElse[String]("Unknown") == "AI"))
-		val ai_scores = ai_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
-		val ai_top10 = ai_scores.takeOrdered(10)(order_by_score.reverse)
-		val ai_moves = ai_games.map(g => (g._2.TurnId)).reduce(_ + _)
+    // split out AI games, then find the top 10 scores
+    val ai_games  = final_grids.filter(g => (g._2.Player.getOrElse[String]("Unknown") == "AI"))
+    val ai_scores = ai_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
+    val ai_top10 = ai_scores.takeOrdered(10)(order_by_score.reverse)
+    val ai_moves = ai_games.map(g => (g._2.TurnId)).reduce(_ + _)
 
-		// split out non-AI games, find some other things, including top 10
-		val human_games = final_grids.filter(g => (g._2.Player.getOrElse[String]("Unknown") != "AI"))
-		val human_scores = human_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
-		val human_top10 = human_scores.takeOrdered(10)(order_by_score.reverse)
-		val human_moves = human_games.map(g => (g._2.TurnId)).reduce(_ + _)
+    // split out non-AI games, find some other things, including top 10
+    val human_games = final_grids.filter(g => (g._2.Player.getOrElse[String]("Unknown") != "AI"))
+    val human_scores = human_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
+    val human_top10 = human_scores.takeOrdered(10)(order_by_score.reverse)
+    val human_moves = human_games.map(g => (g._2.TurnId)).reduce(_ + _)
 
-		// analyze human move latency
-		val human_grids = grids.filter(g => (g.Player.getOrElse[String]("Unknown") != "AI")).collect
-		val human_move_lat = human_grids.map(g => (g.Player, g.TurnMs))
+    // analyze human move latency
+    val human_grids = grids.filter(g => (g.Player.getOrElse[String]("Unknown") != "AI")).collect
+    val human_move_lat = human_grids.map(g => (g.Player, g.TurnMs))
   }
 }
 
+// vim: et ts=2 sw=2 ai smarttab
