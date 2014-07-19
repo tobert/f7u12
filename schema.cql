@@ -20,7 +20,7 @@ CREATE TABLE player_game (
     player  text,
     game_id timeuuid,
     PRIMARY KEY(player, game_id)
-);
+) WITH CLUSTERING ORDER BY (game_id DESC);
 
 CREATE TABLE top_games (
 	dimension text,
