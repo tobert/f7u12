@@ -24,6 +24,7 @@ var F7U12 = function (width) {
   this.size = width * width;
   this.last = this.size - 1;
   this.sequence = 0;
+  this.score = 0;
   this.cells = new Array(this.size);
   this.started = performance.now();
   this.last_turn = this.started;
