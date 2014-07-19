@@ -43,11 +43,25 @@ object F7U12 {
 
   def main(args: Array[String]) {
     val conf = new SparkConf()
-    conf.set("cassandra.connection.host", "127.0.0.1")
+    conf.set("cassandra.connection.host", "zorak")
     conf.set("cassandra.connection.keep_alive_ms", "60000")
     val sc = new SparkContext("local[4]", "F7U12", conf)
 
     val grids = sc.cassandraTable[Grid]("f7u12", "grids")
+
+		// xform grids into a kv rdd and ask for it to be cached
+		val games = grids.map(g => (g.GameId, g)).cache
+
+		// get the final grid of each game by finding the max turn id
+		val final_grids = games.reduceByKey((a,b) => (if (a.TurnId > b.TurnId) a else b))
+
+		val moves_made = games.count
+
+		// count how many games were played
+		// TODO: is there a more efficient way to do this?
+		val games_played = final_grids.count
+
+		final_grids.map(game => (game._1, (game._2.Score.getOrElse[Float](0)))).collect
 
     //val tiles = grids.map(g => (g.GridId, g))
     // (grid_id, max_tile_value)
