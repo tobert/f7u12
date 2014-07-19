@@ -183,3 +183,49 @@ func CountsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(json)
 }
+
+func GetDirCounts(cass *gocql.Session, game_id gocql.UUID) (dcs DirCounts, err error) {
+	dcs = make(DirCounts, 0)
+
+	query := `SELECT game_id, counts FROM dir_counts WHERE game_id=?`
+	iq := cass.Query(query, game_id).Iter()
+
+	for {
+		dc := DirCount{}
+		ok := iq.Scan(&dc.GameId, &dc.Counts)
+		if ok {
+			dcs = append(dcs, dc)
+		} else {
+			break
+		}
+	}
+	if err = iq.Close(); err != nil {
+		log.Printf("Error during Cassandra query: %s", err)
+	}
+
+	return
+}
+
+// GET /dir_counts/<uuid>
+func DirCountsHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	game_id, err := gocql.ParseUUID(vars["game_id"])
+	if err != nil {
+		http.Error(w, fmt.Sprintf("could not parse game_id (uuid expected): '%s'", err), 500)
+		return
+	}
+
+	dcs, err := GetDirCounts(cass, game_id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cassandra query failed: %s", err), 500)
+		return
+	}
+
+	json, err := json.Marshal(dcs)
+	if err != nil {
+		log.Printf("JSON marshal failed: %s\n", err)
+		http.Error(w, fmt.Sprintf("Marshaling JSON failed: %s", err), 500)
+	}
+
+	w.Write(json)
+}
