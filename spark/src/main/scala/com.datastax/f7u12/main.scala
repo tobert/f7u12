@@ -25,9 +25,11 @@ import java.lang.Math
 import java.util
 
 object F7U12 {
+  type UUID = java.util.UUID
+
   // a single turn of 2048
   case class Grid (
-    GameId:    java.util.UUID,
+    GameId:    UUID,
     TurnId:    Int,
     OffsetMs:  Double,
     TurnMs:    Double,
@@ -40,7 +42,7 @@ object F7U12 {
   )
 
   // define an ordering to sort by score
-  val order_by_score = Ordering.by[(java.util.UUID, Float), Float](_._2)
+  val order_by_score = Ordering.by[(UUID, Float), Float](_._2)
 
   // TODO: refactor duplicated code into functions
   def main(args: Array[String]) {
@@ -63,6 +65,7 @@ object F7U12 {
 
     // split out AI games, then find the top 10 scores
     val ai_games  = final_grids.filter(g => (g._2.Player.getOrElse[String]("Unknown") == "AI"))
+    val ai_grids = grids.filter(g => (g.Player.getOrElse[String]("Unknown") == "AI"))
 
     // get the indexes of ai_topN, add the dimension name string, then save to Cassandra
     val ai_scores = ai_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
@@ -72,22 +75,45 @@ object F7U12 {
 
     // split out non-AI games, find some other things, including top 10
     val human_games = final_grids.filter(g => (g._2.Player.getOrElse[String]("Unknown") != "AI"))
+    val human_grids = grids.filter(g => (g.Player.getOrElse[String]("Unknown") != "AI"))
 
     // analyze human move latency
     val human_scores = human_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
-    val human_grids = grids.filter(g => (g.Player.getOrElse[String]("Unknown") != "AI")).collect
-    val human_move_lat = human_grids.map(g => (g.Player, g.TurnMs))
 
     // get the indexes of human_topN, add the dimension name string, then save to Cassandra
     val human_topN = human_scores.takeOrdered(10)(order_by_score.reverse)
     val human_topN_with_rank = sc.parallelize(human_topN).zipWithIndex.map(t => ("human_topN", t._2 + 1, t._1._1, t._1._2))
         human_topN_with_rank.saveToCassandra(keyspace, "top_games", Seq("dimension", "rank", "game_id", "score"))
 
+    // get per-game move counts
+    val game_dirs = games.filter(g => g._2.Direction != "").groupByKey().map(g => Seq(g._1, g._2.groupBy(_.Direction).map(g => (g._1, g._2.count(_ => true)))))
+        // one more map to transform Seq() to tuple
+        game_dirs.map(gd => (gd(0),gd(1))).saveToCassandra("f7u12", "game_dir_counts", Seq("game_id", "counts"))
+
+    // count the directions globally
+    val all_dir_counts = grids.filter(g => g.Direction != "").map(g => (g.Direction, 1)).reduceByKey(_+_)
+    val ai_dir_counts = ai_grids.filter(g => g.Direction != "").map(g => (g.Direction, 1)).reduceByKey(_+_)
+    val human_dir_counts = human_grids.filter(g => g.Direction != "").map(g => (g.Direction, 1)).reduceByKey(_+_)
+
     // compute & overwrite all the simple counts to Cassandra in a key[String]/value[Int] table
     sc.parallelize(Seq(
       ("games",       final_grids.count()),
+      ("ai_games",    ai_games.count()),
+      ("human_games", human_games.count()),
       ("ai_moves",    ai_games.map(g => (g._2.TurnId)).reduce(_ + _)),
-      ("human_moves", human_games.map(g => (g._2.TurnId)).reduce(_ + _))
+      ("human_moves", human_games.map(g => (g._2.TurnId)).reduce(_ + _)),
+      ("all_left",    all_dir_counts.lookup("left")(0)),
+      ("all_right",   all_dir_counts.lookup("right")(0)),
+      ("all_up",      all_dir_counts.lookup("up")(0)),
+      ("all_down",    all_dir_counts.lookup("down")(0)),
+      ("ai_left",     ai_dir_counts.lookup("left")(0)),
+      ("ai_right",    ai_dir_counts.lookup("right")(0)),
+      ("ai_up",       ai_dir_counts.lookup("up")(0)),
+      ("ai_down",     ai_dir_counts.lookup("down")(0)),
+      ("human_left",  human_dir_counts.lookup("left")(0)),
+      ("human_right", human_dir_counts.lookup("right")(0)),
+      ("human_up",    human_dir_counts.lookup("up")(0)),
+      ("human_down",  human_dir_counts.lookup("down")(0))
     )).saveToCassandra(keyspace, "counts", Seq("name", "value"))
   }
 }

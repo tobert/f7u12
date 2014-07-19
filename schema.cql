@@ -36,6 +36,19 @@ CREATE TABLE counts (
 	PRIMARY KEY(name)
 );
 
+CREATE TABLE dir_counts (
+    game_id timeuuid,
+	dir     text,
+	value   int,
+	PRIMARY KEY(game_id, dir)
+);
+
+CREATE TABLE game_dir_counts (
+	game_id timeuuid,
+	counts  map<string,int>,
+	PRIMARY KEY(game_id)
+);
+
 CREATE TABLE move_ms_histogram (
 	game_id   timeuuid,
 	bucket    int,
