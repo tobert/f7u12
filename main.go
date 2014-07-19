@@ -51,6 +51,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/grid", GridHandler)
 	r.HandleFunc("/counts", CountsHandler)
+	r.HandleFunc("/recent", RecentGamesHandler)
 	r.HandleFunc("/ws/{grid_id:[-a-f0-9]+}", WsHandler)
 
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))

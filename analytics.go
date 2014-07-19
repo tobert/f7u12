@@ -57,6 +57,53 @@ type DirCount struct {
 }
 type DirCounts []DirCount
 
+// TODO: if this ever gets adapted for use on a public site
+// the list of games will get crazy so it'll need a limit
+// but for now, there are only a small handful so keep it simple
+func GetRecentGames(cass *gocql.Session) (games PlayerGames, err error) {
+	games = make(PlayerGames, 0)
+
+	// player_game has a reverse comparator, so grab everything and
+	// throw away duplicate players here
+	iq := cass.Query(`SELECT player, game_id FROM player_game`).Iter()
+
+	seen := make(map[string]bool)
+	for {
+		pg := PlayerGame{}
+		ok := iq.Scan(&pg.Player, &pg.GameId)
+		if ok {
+			// only get the first record for each player name
+			if _, ok := seen[pg.Player]; !ok {
+				games = append(games, pg)
+				seen[pg.Player] = true
+			}
+		} else {
+			break
+		}
+	}
+	if err = iq.Close(); err != nil {
+		log.Printf("Error during Cassandra query: %s", err)
+	}
+
+	return games, err
+}
+
+func RecentGamesHandler(w http.ResponseWriter, r *http.Request) {
+	games, err := GetRecentGames(cass)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cassandra query failed: %s", err), 500)
+		return
+	}
+
+	json, err := json.Marshal(games)
+	if err != nil {
+		log.Printf("JSON marshal failed: %s\n", err)
+		http.Error(w, fmt.Sprintf("Marshaling JSON failed: %s", err), 500)
+	}
+
+	w.Write(json)
+}
+
 func GetCounts(cass *gocql.Session) (counts Counts, err error) {
 	counts = make(Counts, 0)
 
@@ -93,3 +140,5 @@ func CountsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(json)
 }
+
+
