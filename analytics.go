@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gocql/gocql"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 )
@@ -88,6 +89,46 @@ func GetRecentGames(cass *gocql.Session) (games PlayerGames, err error) {
 	return games, err
 }
 
+// GET /top_games?dimension=ai_topN
+func GetTopGames(cass *gocql.Session, dimension string) (tgs TopGames, err error) {
+	tgs = make(TopGames, 0)
+
+	query := `SELECT dimension, rank, game_id, score FROM top_games WHERE dimension=?`
+	iq := cass.Query(query, dimension).Iter()
+
+	for {
+		tg := TopGame{}
+		ok := iq.Scan(&tg.Dimension, &tg.Rank, &tg.GameId, &tg.Score)
+		if ok {
+			tgs = append(tgs, tg)
+		} else {
+			break
+		}
+	}
+	if err = iq.Close(); err != nil {
+		log.Printf("Error during Cassandra query: %s", err)
+	}
+
+	return
+}
+
+func TopGamesHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	tgs, err := GetTopGames(cass, vars["dimension"])
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cassandra query failed: %s", err), 500)
+		return
+	}
+
+	json, err := json.Marshal(tgs)
+	if err != nil {
+		log.Printf("JSON marshal failed: %s\n", err)
+		http.Error(w, fmt.Sprintf("Marshaling JSON failed: %s", err), 500)
+	}
+
+	w.Write(json)
+}
+
 func RecentGamesHandler(w http.ResponseWriter, r *http.Request) {
 	games, err := GetRecentGames(cass)
 	if err != nil {
@@ -140,5 +181,3 @@ func CountsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(json)
 }
-
-
