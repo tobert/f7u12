@@ -16,7 +16,5 @@ libraryDependencies += "org.apache.cassandra" % "cassandra-clientutil" % "2.0.9"
 
 libraryDependencies += "org.apache.cassandra" % "cassandra-thrift" % "2.0.9"
 
-resolvers += "Tobert Repo" at "http://tobert.org/mvn"
-
-libraryDependencies += "com.datastax.cassandra" %% "cassandra-driver-spark" % "1.0.0-SNAPSHOT"
+libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.0.0-beta2"
 
