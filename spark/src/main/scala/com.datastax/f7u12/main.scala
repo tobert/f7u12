@@ -54,8 +54,8 @@ object F7U12 {
     val ntop = 10
 
     val conf = new SparkConf()
-    conf.set("cassandra.connection.host", server)
-    conf.set("cassandra.connection.keep_alive_ms", "60000")
+    conf.set("spark.cassandra.connection.host", server)
+    conf.set("spark.cassandra.connection.keep_alive_ms", "60000")
     val sc = new SparkContext("local[4]", "F7U12", conf)
 
     val grids = sc.cassandraTable[Grid](keyspace, "grids").cache
