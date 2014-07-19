@@ -35,8 +35,6 @@ $(function() {
     });
 
     game.last_turn = performance.now();
-
-    console.log(game.serialize());
   };
 
   var naive_mover = function (game) {
