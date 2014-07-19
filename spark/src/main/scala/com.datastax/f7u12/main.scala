@@ -63,27 +63,32 @@ object F7U12 {
 
     // split out AI games, then find the top 10 scores
     val ai_games  = final_grids.filter(g => (g._2.Player.getOrElse[String]("Unknown") == "AI"))
-    val ai_scores = ai_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
-    val ai_topN = ai_scores.takeOrdered(10)(order_by_score.reverse)
-    val ai_moves = ai_games.map(g => (g._2.TurnId)).reduce(_ + _)
 
     // get the indexes of ai_topN, add the dimension name string, then save to Cassandra
+    val ai_scores = ai_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
+    val ai_topN = ai_scores.takeOrdered(10)(order_by_score.reverse)
     val ai_topN_with_rank = sc.parallelize(ai_topN).zipWithIndex.map(t => ("ai_topN", t._2 + 1, t._1._1, t._1._2))
         ai_topN_with_rank.saveToCassandra(keyspace, "top_games", Seq("dimension", "rank", "game_id", "score"))
 
     // split out non-AI games, find some other things, including top 10
     val human_games = final_grids.filter(g => (g._2.Player.getOrElse[String]("Unknown") != "AI"))
-    val human_scores = human_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
-    val human_moves = human_games.map(g => (g._2.TurnId)).reduce(_ + _)
-    val human_topN = human_scores.takeOrdered(10)(order_by_score.reverse)
 
     // analyze human move latency
+    val human_scores = human_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
     val human_grids = grids.filter(g => (g.Player.getOrElse[String]("Unknown") != "AI")).collect
     val human_move_lat = human_grids.map(g => (g.Player, g.TurnMs))
 
     // get the indexes of human_topN, add the dimension name string, then save to Cassandra
+    val human_topN = human_scores.takeOrdered(10)(order_by_score.reverse)
     val human_topN_with_rank = sc.parallelize(human_topN).zipWithIndex.map(t => ("human_topN", t._2 + 1, t._1._1, t._1._2))
         human_topN_with_rank.saveToCassandra(keyspace, "top_games", Seq("dimension", "rank", "game_id", "score"))
+
+    // compute & overwrite all the simple counts to Cassandra in a key[String]/value[Int] table
+    sc.parallelize(Seq(
+      ("games",       final_grids.count()),
+      ("ai_moves",    ai_games.map(g => (g._2.TurnId)).reduce(_ + _)),
+      ("human_moves", human_games.map(g => (g._2.TurnId)).reduce(_ + _))
+    )).saveToCassandra(keyspace, "counts", Seq("name", "value"))
   }
 }
 

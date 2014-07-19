@@ -30,3 +30,16 @@ CREATE TABLE top_games (
 	PRIMARY KEY(dimension, rank)
 );
 
+CREATE TABLE counts (
+	name text,
+	value int,
+	PRIMARY KEY(name)
+);
+
+CREATE TABLE move_ms_histogram (
+	game_id   timeuuid,
+	bucket    int,
+	turn_ms   double,
+	PRIMARY KEY(game_id, bucket)
+);
+
