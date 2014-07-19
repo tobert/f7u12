@@ -23,36 +23,30 @@ CREATE TABLE player_game (
 ) WITH CLUSTERING ORDER BY (game_id DESC);
 
 CREATE TABLE top_games (
-	dimension text,
-	rank      int,
-	game_id   timeuuid,
-	score     float,
-	PRIMARY KEY(dimension, rank)
+    dimension text,
+    rank      int,
+    game_id   timeuuid,
+    score     float,
+    PRIMARY KEY(dimension, rank)
 );
 
 CREATE TABLE counts (
-	name text,
-	value int,
-	PRIMARY KEY(name)
+    name text,
+    value int,
+    PRIMARY KEY(name)
 );
 
 CREATE TABLE dir_counts (
     game_id timeuuid,
-	dir     text,
-	value   int,
-	PRIMARY KEY(game_id, dir)
-);
-
-CREATE TABLE game_dir_counts (
-	game_id timeuuid,
-	counts  map<string,int>,
-	PRIMARY KEY(game_id)
+    counts  map<string,int>,
+    PRIMARY KEY(game_id)
 );
 
 CREATE TABLE move_ms_histogram (
-	game_id   timeuuid,
-	bucket    int,
-	turn_ms   double,
-	PRIMARY KEY(game_id, bucket)
+    game_id   timeuuid,
+    bucket    int,
+    turn_ms   double,
+    PRIMARY KEY(game_id, bucket)
 );
 
+// vim: et ts=4 sw=4 ai smarttab
