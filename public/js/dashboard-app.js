@@ -27,11 +27,13 @@ $(function() {
   var human_leaderboard = new F7U12.Leaderboard("#human_topN_leaderboard", "Human Top 10");
   var ai_leaderboard = new F7U12.Leaderboard("#ai_topN_leaderboard", "AI Top 10");
 
-  var svg = dimple.newSvg("#graph3", 590, 400);
+  var svg1 = dimple.newSvg("#graph1", 590, 400);
+  var svg2 = dimple.newSvg("#graph2", 590, 400);
+  var svg3 = dimple.newSvg("#graph3", 590, 400);
 
   // this is a little cheezy but demonstrates a working graph with dimple
   d3.json("/counts", function (data) {
-    var myChart = new dimple.chart(svg, data);
+    var myChart = new dimple.chart(svg3, data);
     myChart.setBounds(75, 30, 480, 330)
     myChart.addMeasureAxis("x", "value");
     var y = myChart.addCategoryAxis("y", "name");
@@ -39,20 +41,30 @@ $(function() {
     myChart.draw();
   });
 
-  [1,2].forEach(function (d,i) {
-    var svg = dimple.newSvg("#graph"+(1+i), 590, 400);
-    d3.tsv("/example_data.tsv", function (data) {
-      data = dimple.filterData(data, "Owner", ["Aperture", "Black Mesa"])
-      var myChart = new dimple.chart(svg, data);
-      myChart.setBounds(60, 30, 430, 330);
-      var x = myChart.addCategoryAxis("x", ["Owner", "Month"]);
-      x.addGroupOrderRule("Date");
-      myChart.addMeasureAxis("y", "Unit Sales");
-      var s = myChart.addSeries(["Brand"], dimple.plot.line);
-      s.barGap = 0.05;
-      myChart.addLegend(510, 20, 100, 300, "left");
-      myChart.draw();
-    });
+  d3.json("/counts", function (data) {
+    var re = /^(ai|human)_(up|down|left|right)/;
+    var ai_re = /^ai_(up|down|left|right)/;
+    var human_re = /^human_(up|down|left|right)/;
+
+    var ai_moves = data.filter(function (d) { return ai_re.test(d.name); })
+      .map(function (d) { return { name: d.name.replace(re, "$2"), value: d.value }; });
+
+    var human_moves = data.filter(function (d) { return human_re.test(d.name); })
+      .map(function (d) { return { name: d.name.replace(re, "$2"), value: d.value }; });
+
+    var ai_move_chart = new dimple.chart(svg2, ai_moves);
+    ai_move_chart.setBounds(60, 30, 430, 330);
+    ai_move_chart.addCategoryAxis("x", "name");
+    ai_move_chart.addMeasureAxis("y", "value");
+    ai_move_chart.addSeries("value", dimple.plot.bar);
+    ai_move_chart.draw();
+
+    var human_move_chart = new dimple.chart(svg1, human_moves);
+    human_move_chart.setBounds(60, 30, 430, 330);
+    human_move_chart.addCategoryAxis("x", "name");
+    human_move_chart.addMeasureAxis("y", "value");
+    human_move_chart.addSeries("value", dimple.plot.bar);
+    human_move_chart.draw();
   });
 
   var update = function (url, widget) {
