@@ -7,29 +7,51 @@ Cassandra and query with CQL or Spark.
 Usage
 =====
 
-Build & start the server then browse to http://localhost:8080
+Build & start the server then browse to http://localhost:9000
 
 ```
 go get -u github.com/gocql/gocql
+go get -u github.com/gorilla/mux
+go get -u github.com/gorilla/websocket
 go build
-./f7u12
+./f7u12 -help
+Usage of ./f7u12:
+  -addr=":9000": IP:PORT or :PORT address to listen on
+  -cql="127.0.0.1": IP or IP:port of the Cassandra CQL service
+  -ks="f7u12": keyspace containing the f7u12 schema
 ```
+
+Dependencies
+============
+
+Only Cassandra has to be running to run and play the game. The
+game will run fine on its own in a normal webserver. The XHRs
+will fail but it does not break the game. It does reference
+a couple CDN links. The assets are also checked in, so making it
+work offline only requires changing the CDN links in the html files.
+
+The Spark job needs Cassandra running.
 
 Components
 ==========
 
-* simple 2048 widget called f7u12
-* 2-player page with touch controls
-    * TODO: add player name entry
-* Go backend for storing metrics in Cassandra
-* Schema for storing metrics and game history
+* Javascript 2048 game widget called f7u12
+* Go backend for storing and reading metrics in Cassandra
+* Scala job that analyzes all game stats in Cassandra
+* Bootstrap 3 / D3.js dashboard(s) to display metrics
 
 Status
 ======
 
-The game is playable. It isn't wired up to anything and
-needs some CSS love, but the mechanics are there and ready to start
-tracking.
+* Game is playable and sends every move to the Go app immediately.
+* Go backend is basically complete. Moving to a more REST-compliant URL scheme might be nice.
+* Spark job processes the move data and stores aggregates in Cassandra (that are readable through the Go app).
+* Dashboards in progress.
+
+
+
+
+
 
 Security
 ========
