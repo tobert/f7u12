@@ -50,7 +50,7 @@ object F7U12 {
   // TODO: refactor duplicated code into functions
   def main(args: Array[String]) {
     val keyspace = "f7u12"
-    val server = "zorak"
+    val server = "localhost"
     val ntop = 10
 
     val conf = new SparkConf()
@@ -61,13 +61,13 @@ object F7U12 {
     val grids = sc.cassandraTable[Grid](keyspace, "grids").cache
 
     // xform grids into a kv rdd and ask for it to be cached
-    val games = grids.map(g => (g.GameId, g)).cache
+    val grids_kv = grids.map(g => (g.GameId, g)).cache
 
     // get the final grid of each game by finding the max turn id
-    val final_grids = games.reduceByKey((a,b) => (if (a.TurnId > b.TurnId) a else b))
+    val games = grids_kv.reduceByKey((a,b) => (if (a.TurnId > b.TurnId) a else b))
 
     // split out AI games, then find the top 10 scores
-    val ai_games  = final_grids.filter(g => (g._2.Player.getOrElse[String]("Unknown") == "AI"))
+    val ai_games  = games.filter(g => (g._2.Player.getOrElse[String]("Unknown") == "AI"))
     val ai_grids = grids.filter(g => (g.Player.getOrElse[String]("Unknown") == "AI"))
 
     // get the indexes of ai_topN, add the dimension name string, then save to Cassandra
@@ -77,7 +77,7 @@ object F7U12 {
         ai_topN_with_rank.saveToCassandra(keyspace, "top_games", Seq("dimension", "rank", "game_id", "score"))
 
     // split out non-AI games, find some other things, including top 10
-    val human_games = final_grids.filter(g => (g._2.Player.getOrElse[String]("Unknown") != "AI"))
+    val human_games = games.filter(g => (g._2.Player.getOrElse[String]("Unknown") != "AI"))
     val human_grids = grids.filter(g => (g.Player.getOrElse[String]("Unknown") != "AI"))
 
     // analyze human move latency
@@ -89,7 +89,7 @@ object F7U12 {
         human_topN_with_rank.saveToCassandra(keyspace, "top_games", Seq("dimension", "rank", "game_id", "score"))
 
     // get per-game move counts
-    val game_dirs = games.filter(g => g._2.Direction != "").groupByKey().map(g => Seq(g._1, g._2.groupBy(_.Direction).map(g => (g._1, g._2.count(_ => true)))))
+    val game_dirs = grids_kv.filter(g => g._2.Direction != "").groupByKey().map(g => Seq(g._1, g._2.groupBy(_.Direction).map(g => (g._1, g._2.count(_ => true)))))
         // one more map to transform Seq() to tuple
         game_dirs.map(gd => (gd(0),gd(1))).saveToCassandra("f7u12", "dir_counts", Seq("game_id", "counts"))
 
@@ -100,7 +100,7 @@ object F7U12 {
 
     // compute & overwrite all the simple counts to Cassandra in a key[String]/value[Int] table
     sc.parallelize(Seq(
-      ("games",       final_grids.count()),
+      ("games",       games.count()),
       ("ai_games",    ai_games.count()),
       ("human_games", human_games.count()),
       ("ai_moves",    ai_games.map(g => (g._2.TurnId)).reduce(_ + _)),
