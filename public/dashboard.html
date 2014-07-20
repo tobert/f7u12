@@ -13,11 +13,22 @@
 </head>
 
 <body>
-  <div>
+  <div class="container-fluid">
     <div class="row">
       <div class="col-sm-4" id="human_topN_leaderboard"></div>
-      <div class="col-sm-4" id="games_played_bignum"></div>
+      <div class="col-sm-4" id="games_played_bignum">
+        <h1 id="total_games_played">9999</h1><h2>Games Played</h2>
+      </div>
       <div class="col-sm-4" id="ai_topN_leaderboard"></div>
+    </div>
+    <div class="row">
+      <div class="col-sm-6" id="graph1"></div>
+      <div class="col-sm-6" id="graph2"></div>
+    </div>
+    <div class="row">
+      <div class="col-sm-4" id="graph3"></div>
+      <div class="col-sm-4" id="grid1"></div>
+      <div class="col-sm-4" id="grid2"></div>
     </div>
   </div>
 
@@ -25,6 +36,7 @@
   <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
   <script src="js/jquery.touchSwipe.min.js"></script>
   <script src="js/d3.v3.min.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
   <script src="js/performance-now-polyfill.js"></script>
   <script src="js/f7u12.js"></script>
   <script src="js/dpad.js"></script>
