@@ -15,17 +15,27 @@
  */
 
 $(function() {
+  // one-time setup, creating elements, etc.
   document.body.addEventListener('touchmove', function(event) { event.preventDefault(); }, false);
 
-  // placeholders from dimplejs.org
+  var game = new F7U12(4);
+      game.render("#grid1");
+
+  //var game = new F7U12(4);
+  //    game.render("#grid2");
+
+  var human_leaderboard = new F7U12.Leaderboard("#human_topN_leaderboard", "Human Top 10");
+  var ai_leaderboard = new F7U12.Leaderboard("#ai_topN_leaderboard", "AI Top 10");
+
   var svg = dimple.newSvg("#graph3", 590, 400);
-  d3.tsv("/example_data.tsv", function (data) {
+
+  // this is a little cheezy but demonstrates a working graph with dimple
+  d3.json("/counts", function (data) {
     var myChart = new dimple.chart(svg, data);
     myChart.setBounds(75, 30, 480, 330)
-    myChart.addMeasureAxis("x", "Unit Sales");
-    var y = myChart.addCategoryAxis("y", "Month");
-    y.addOrderRule("Date");
-    myChart.addSeries(null, dimple.plot.bar);
+    myChart.addMeasureAxis("x", "value");
+    var y = myChart.addCategoryAxis("y", "name");
+    myChart.addSeries("value", dimple.plot.bar);
     myChart.draw();
   });
 
@@ -45,32 +55,22 @@ $(function() {
     });
   });
 
-  var game = new F7U12(4);
-      game.render("#grid1");
+  var update = function (url, widget) {
+    $.ajax({
+      url: url,
+      dataType: "json",
+      success: function (data) {
+        //console.log(url, data);
+        widget.render(data);
+      }
+    });
+  };
 
-  var game = new F7U12(4);
-      game.render("#grid2");
+  // BELOW THIS LINE: timer-based updates only
 
-  var human_leaderboard = new F7U12.Leaderboard("#human_topN_leaderboard", "Human Top 10");
-  var ai_leaderboard = new F7U12.Leaderboard("#ai_topN_leaderboard", "AI Top 10");
-
-  $.ajax({
-    url: "/top_games/human_topN",
-    dataType: "json",
-    success: function (data) {
-      console.log(data);
-      human_leaderboard.render(data);
-    }
-  });
-
-  $.ajax({
-    url: "/top_games/ai_topN",
-    dataType: "json",
-    success: function (data) {
-      console.log(data);
-      ai_leaderboard.render(data);
-    }
-  });
+  //var update_timer = $.timer(function() {
+    update("/top_games/human_topN", human_leaderboard);
+    update("/top_games/ai_topN", ai_leaderboard);
+  //}, 1000, true);
 });
-
 // vim: et ts=2 sw=2 ai smarttab
