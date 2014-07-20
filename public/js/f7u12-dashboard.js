@@ -33,17 +33,26 @@ F7U12.Leaderboard = function (target, title) {
 F7U12.Leaderboard.prototype.render = function (data) {
   var lb = this;
 
-  var rows = lb.tbody.selectAll("tr")
+  lb.rows = lb.tbody.selectAll("tr")
     .data(data)
     .enter()
     .append("tr");
 
   // rank game_id score
-  var cells = rows.selectAll("td")
+  lb.cells = lb.rows.selectAll("td")
     .data(function (d) { return [d.game_id, d.score]; })
     .enter()
     .append("td")
-    .text(function (d) { console.log("td d", d); return d; });
+    .text(function (d) { return d; });
+};
+
+F7U12.Leaderboard.prototype.update = function (data) {
+  var lb = this;
+  lb.cells.data(data, function (d) { return [d.game_id, d.score]; });
+  lb.cells.exit().remove();
+  lb.cells.enter()
+    .append("td")
+    .text(function (d) { return d; });
 };
 
 // vim: et ts=2 sw=2 ai smarttab
