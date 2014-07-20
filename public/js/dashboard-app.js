@@ -18,11 +18,11 @@ $(function() {
   // one-time setup, creating elements, etc.
   document.body.addEventListener('touchmove', function(event) { event.preventDefault(); }, false);
 
-  var game = new F7U12(4);
-      game.render("#grid1");
-
   //var game = new F7U12(4);
-  //    game.render("#grid2");
+  //    game.render("#grid1");
+
+  var game = new F7U12(4);
+      game.render("#grid2");
 
   var human_leaderboard = new F7U12.Leaderboard("#human_topN_leaderboard", "Human Top 10");
   var ai_leaderboard = new F7U12.Leaderboard("#ai_topN_leaderboard", "AI Top 10");
@@ -51,6 +51,12 @@ $(function() {
 
     var human_moves = data.filter(function (d) { return human_re.test(d.name); })
       .map(function (d) { return { name: d.name.replace(re, "$2"), value: d.value }; });
+
+    ["human_games", "human_moves", "ai_games", "ai_moves"].forEach(function (name) {
+      d3.select("#" + name)
+        .data(data.filter(function (d) { return d.name === name; }))
+        .text(function (d) { return d.value; });
+    });
 
     var ai_move_chart = new dimple.chart(svg2, ai_moves);
     ai_move_chart.setBounds(60, 30, 430, 330);
