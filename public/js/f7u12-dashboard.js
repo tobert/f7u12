@@ -19,6 +19,8 @@
 // create a leaderboard widget
 F7U12.Leaderboard = function (target, title) {
   var lb = this;
+  lb.target = target;
+  lb.title = title;
 
   lb.table = d3.select(target).append("table")
     .classed("f7u12-leaderboard", true) // see ../css/dashboard.css
@@ -48,11 +50,20 @@ F7U12.Leaderboard.prototype.render = function (data) {
 
 F7U12.Leaderboard.prototype.update = function (data) {
   var lb = this;
-  lb.cells.data(data, function (d) { return [d.game_id, d.score]; });
-  lb.cells.exit().remove();
-  lb.cells.enter()
+  var rows = d3.selectAll(lb.target + " tr")
+    .data(data);
+
+  rows.enter().append("tr");
+
+  var cells = rows.selectAll("td")
+    .data(function (d) { return [d.game_id, d.score]; });
+
+  cells.enter()
     .append("td")
     .text(function (d) { return d; });
+
+  cells.exit().remove();
+  rows.exit().remove();
 };
 
 // vim: et ts=2 sw=2 ai smarttab
