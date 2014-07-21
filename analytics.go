@@ -58,6 +58,13 @@ type DirCount struct {
 }
 type DirCounts []DirCount
 
+type AvgScoreByTurn struct {
+	Name     string  `json:"name"` // e.g. human, ai
+	TurnId   int     `json:"turn_id"`
+	AvgScore float32 `json:"avg_score"`
+}
+type AvgScoreByTurns []AvgScoreByTurn
+
 // TODO: if this ever gets adapted for use on a public site
 // the list of games will get crazy so it'll need a limit
 // but for now, there are only a small handful so keep it simple
@@ -222,6 +229,45 @@ func DirCountsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json, err := json.Marshal(dcs)
+	if err != nil {
+		log.Printf("JSON marshal failed: %s\n", err)
+		http.Error(w, fmt.Sprintf("Marshaling JSON failed: %s", err), 500)
+	}
+
+	w.Write(json)
+}
+
+func GetAvgScoreByTurn(cass *gocql.Session) (avgs AvgScoreByTurns, err error) {
+	avgs = make(AvgScoreByTurns, 0)
+
+	iq := cass.Query(`SELECT name, turn_id, avg_score FROM avg_score_by_turn`).Iter()
+
+	for {
+		avg := AvgScoreByTurn{}
+		ok := iq.Scan(&avg.Name, &avg.TurnId, &avg.AvgScore)
+		if ok {
+			avgs = append(avgs, avg)
+		} else {
+			log.Printf("Error during Cassandra query ... %s", ok)
+			break
+		}
+	}
+	if err = iq.Close(); err != nil {
+		log.Printf("Error during Cassandra query: %s", err)
+	}
+
+	return avgs, err
+}
+
+// GET /avg_score_by_turn
+func AvgScoreByTurnHandler(w http.ResponseWriter, r *http.Request) {
+	avgs, err := GetAvgScoreByTurn(cass)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cassandra query failed: %s", err), 500)
+		return
+	}
+
+	json, err := json.Marshal(avgs)
 	if err != nil {
 		log.Printf("JSON marshal failed: %s\n", err)
 		http.Error(w, fmt.Sprintf("Marshaling JSON failed: %s", err), 500)
