@@ -28,6 +28,11 @@ import (
 	"time"
 )
 
+type GameScoreData struct {
+	AvgScoreByTurn
+	Score float32 `json:"score"`
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -50,17 +55,32 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	// TODO: this is a stub
 	go func() {
 		for {
 			select {
 			case <-time.After(time.Second):
 				game, err := GetGame(cass, game_id)
 				if err != nil {
-					log.Printf("Cassandra query failed: %s\n", err)
+					log.Printf("Cassandra query failed to get Game data: %s\n", err)
 				}
 
-				js, err := json.Marshal(game)
+				avgs, err := GetAvgScoreByTurn(cass)
+				if err != nil {
+					http.Error(w, fmt.Sprintf("Cassandra query failed to get avg data: %s", err), 500)
+					return
+				}
+
+				// possibly fragile once the spark job writes AI into the
+				// avg score table, but for now it's fine
+				gsds := make([]GameScoreData, len(game))
+				for i, grid := range game {
+					gsds[i].TurnId = grid.TurnId
+					gsds[i].Score = grid.Score
+					gsds[i].Name = avgs[grid.TurnId].Name
+					gsds[i].AvgScore = avgs[grid.TurnId].AvgScore
+				}
+
+				js, err := json.Marshal(gsds)
 				if err != nil {
 					log.Printf("JSON marshal failed: %s\n", err)
 				}
