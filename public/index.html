@@ -12,15 +12,26 @@
 </head>
 
 <body>
-  <div class="container">
+  <div class="container-fluid">
     <div class="row">
-      <div class="col-xs-4" id="score-container"> </div>
-      <div class="col-xs-8" id="score-chart"> </div>
+      <div class="col-xs-3"></div>
+      <div class="col-xs-2 game-stats">
+         <span>Score: </span><span id="score-value">0</span>
+      </div>
+      <div class="col-xs-2 game-stats">
+         <span>Turn: </span><span id="turn-id-value">0</span>
+      </div>
+      <div class="col-xs-2 game-stats">
+         <span>Average: </span><span id="avg-score-value">0</span>
+      </div>
+      <div class="col-xs-3"></div>
     </div>
     <div class="row">
-      <div class="col-xs-12">
+      <div class="col-xs-3"></div>
+      <div class="col-xs-6">
         <div id="player1-container"></div>
       </div>
+      <div class="col-xs-3"></div>
     </div>
   </div>
 

@@ -11,6 +11,7 @@ body {
   -ms-user-select: none;     /* IE 10  */
   -o-user-select: none;
   user-select: none;
+  font-family: 'Consolas', 'Inconsolata', monospace;
 }
 
 #footer {
@@ -38,5 +39,13 @@ td.arrow {
 
 div.game-container {
     display: inline-block;
+}
+
+div.game-stats {
+  height: 40px;
+  line-height: 40px;
+  font-size: 24px;
+  text-align: center;
+  display: inline-block;
 }
 

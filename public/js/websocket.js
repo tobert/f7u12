@@ -17,27 +17,6 @@
 // break with style for now - get it working ...
 function start_websocket(grid_id, target) {
   var sock = new WebSocket("ws://" + window.location.host + "/ws/" + grid_id);
-  var not_initialized = true;
-
-  var score_chart = function (data) {
-    var svg = dimple.newSvg("#score-chart", 200, 120);
-    var chart = new dimple.chart(svg, data);
-    chart.setBounds(20, 20, 160, 80);
-    var x = chart.addMeasureAxis("x", "offset_ms");
-        x.hidden = true;
-    var y = chart.addMeasureAxis("y", "score");
-        y.hidden = true;
-    var s = chart.addSeries("score", dimple.plot.line);
-        s.lineWeight = 1;
-    chart.draw();
-
-    chart.update = function (data) {
-      chart.data = data;
-      chart.draw();
-    };
-
-    return chart;
-  };
 
   sock.onerror = function (e) {
     console.log("socket error", e);
@@ -47,12 +26,10 @@ function start_websocket(grid_id, target) {
     var chart;
     sock.onmessage = function(msg) {
       var data = JSON.parse(msg.data);
-      if (not_initialized) {
-        chart = score_chart(data);
-        not_initialized = false;
-      } else {
-        chart.update(data);
-      }
+      var last = data.length - 1;
+      var current_turn = parseInt(d3.select("#turn-id-value").text());
+      console.log("TURN ID", current_turn);
+      d3.select("#avg-score-value").text(parseInt(data[last].avg_score));
     };
   };
 }
