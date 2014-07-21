@@ -20,12 +20,15 @@ function start_websocket(grid_id, target) {
   var not_initialized = true;
 
   var score_chart = function (data) {
-    var svg = dimple.newSvg("#score-chart", 160, 80);
+    var svg = dimple.newSvg("#score-chart", 200, 120);
     var chart = new dimple.chart(svg, data);
-    chart.setBounds(0, 0, 160, 80);
-    chart.addCategoryAxis("x", "offset_ms");
-    chart.addMeasureAxis("y", "score");
-    chart.addSeries("score", dimple.plot.line);
+    chart.setBounds(20, 20, 160, 80);
+    var x = chart.addMeasureAxis("x", "offset_ms");
+        x.hidden = true;
+    var y = chart.addMeasureAxis("y", "score");
+        y.hidden = true;
+    var s = chart.addSeries("score", dimple.plot.line);
+        s.lineWeight = 1;
     chart.draw();
 
     chart.update = function (data) {
