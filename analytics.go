@@ -90,7 +90,7 @@ func GetRecentGames(cass *gocql.Session) (games PlayerGames, err error) {
 		}
 	}
 	if err = iq.Close(); err != nil {
-		log.Printf("Error during Cassandra query: %s", err)
+		log.Printf("Error during query (GetRecentGames): %s", err)
 	}
 
 	return games, err
@@ -129,7 +129,7 @@ func GetTopGames(cass *gocql.Session, dimension string) (tgs TopGames, err error
 		}
 	}
 	if err = iq.Close(); err != nil {
-		log.Printf("Error during Cassandra query: %s", err)
+		log.Printf("Error during query (GetTopGames): %s", err)
 	}
 
 	return
@@ -168,7 +168,7 @@ func GetCounts(cass *gocql.Session) (counts Counts, err error) {
 		}
 	}
 	if err = iq.Close(); err != nil {
-		log.Printf("Error during Cassandra query: %s", err)
+		log.Printf("Error during query (GetCounts): %s", err)
 	}
 
 	return counts, err
@@ -207,7 +207,7 @@ func GetDirCounts(cass *gocql.Session, game_id gocql.UUID) (dcs DirCounts, err e
 		}
 	}
 	if err = iq.Close(); err != nil {
-		log.Printf("Error during Cassandra query: %s", err)
+		log.Printf("Error during query (GetDirCounts): %s", err)
 	}
 
 	return
@@ -238,7 +238,9 @@ func DirCountsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAvgScoreByTurn(cass *gocql.Session) (avgs AvgScoreByTurns, err error) {
-	avgs = make(AvgScoreByTurns, 0)
+	// allocate an osbscenely large list so values can be injected by index
+	// which is used in the websocket handler to access by turn id
+	avgs = make(AvgScoreByTurns, 2048)
 
 	iq := cass.Query(`SELECT name, turn_id, avg_score FROM avg_score_by_turn`).Iter()
 
@@ -246,14 +248,13 @@ func GetAvgScoreByTurn(cass *gocql.Session) (avgs AvgScoreByTurns, err error) {
 		avg := AvgScoreByTurn{}
 		ok := iq.Scan(&avg.Name, &avg.TurnId, &avg.AvgScore)
 		if ok {
-			avgs = append(avgs, avg)
+			avgs[avg.TurnId] = avg
 		} else {
-			log.Printf("Error during Cassandra query ... %s", ok)
 			break
 		}
 	}
 	if err = iq.Close(); err != nil {
-		log.Printf("Error during Cassandra query: %s", err)
+		log.Printf("Error during query (GetAvgScoreBy): %s", err)
 	}
 
 	return avgs, err
