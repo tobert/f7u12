@@ -41,7 +41,7 @@ $(function() {
   };
 
   var make_game = function(target) {
-     var score_div = d3.select(target).append("div")
+     var score_div = d3.select("#score-container")
        .attr("class", "f7u12-score")
        .text("Score: 0");
 
