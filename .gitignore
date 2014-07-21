@@ -5,12 +5,14 @@
 *.log
 
 # sbt specific
-spark/target/
-spark/lib_managed/
-spark/src_managed/
-spark/project/
-spark/.idea/
-spark/src/target/
+target/
+lib_managed/
+src_managed/
+project/
+.idea/
+.idea*/
+src/target/
+.DS_Store
 
 # Scala-IDE specific
 .scala_dependencies
