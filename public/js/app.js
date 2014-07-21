@@ -20,6 +20,8 @@
  */
 
 $(function() {
+  var DATA = {};
+
   var move = function (game, dir) {
     var changed = game.move(dir);
     if (!changed) {
@@ -48,7 +50,7 @@ $(function() {
     var game = new F7U12(4); // 4x4 grid
         game.init(2); // start with 2 tiles
         game.render(target);
-        game.make_dpad(target);
+        //game.make_dpad(target);
 
     // jquery swipe plugin
     $(target).swipe({ swipe: function(e, direction) { move(game, direction); } });
@@ -77,21 +79,19 @@ $(function() {
   // disable default swipe events (e.g. ios overscroll)
   document.body.addEventListener('touchmove', function(event) { event.preventDefault(); }, false);
 
-  // designed to have multiple players on the same touch screen
-  // for now, just one player is configured
-  [1].forEach(function (pnum) {
-    var target = "#player" + pnum + "-container";
-    var game = make_game(target);
-        game.set_name("player" + pnum);
-    start_websocket(game.uuid, target);
+  var target = "#player1-container";
+  var game = make_game(target);
+      game.set_name("player1");
 
-    // send the starting board to the server
-    $.ajax({
-      url: "/grid",
-      type: "PUT",
-      dataType: "json",
-      data: game.serialize(null, null),
-      success: function () { console.log("Game init succeeded."); }
-    });
+  // feeds move data back for updating the graph
+  start_websocket(game.uuid, target);
+
+  // send the starting board to the server
+  $.ajax({
+    url: "/grid",
+    type: "PUT",
+    dataType: "json",
+    data: game.serialize(null, null),
+    success: function () { console.log("Game init succeeded."); }
   });
 });

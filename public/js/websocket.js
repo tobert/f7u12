@@ -17,29 +17,39 @@
 // break with style for now - get it working ...
 function start_websocket(grid_id, target) {
   var sock = new WebSocket("ws://" + window.location.host + "/ws/" + grid_id);
+  var not_initialized = true;
+
+  var score_chart = function (data) {
+    var svg = dimple.newSvg("#score-chart", 160, 80);
+    var chart = new dimple.chart(svg, data);
+    chart.setBounds(0, 0, 160, 80);
+    chart.addCategoryAxis("x", "offset_ms");
+    chart.addMeasureAxis("y", "score");
+    chart.addSeries("score", dimple.plot.line);
+    chart.draw();
+
+    chart.update = function (data) {
+      chart.data = data;
+      chart.draw();
+    };
+
+    return chart;
+  };
 
   sock.onerror = function (e) {
     console.log("socket error", e);
   };
 
   sock.onopen = function (e) {
-    var panel = d3.select(target)
-      .append("div")
-      .attr("class", "ws-panel")
-      .attr("id", "player1-ws-panel");
-
-    var ta = panel.append("textarea")
-      .attr("disabled", true)
-      .attr("cols", 120)
-      .attr("rows", 8);
-
+    var chart;
     sock.onmessage = function(msg) {
-      ta.each(function () {
-        this.value = msg.data.replace(/],\[/, "],\r\n[");
-        // TODO: needs a pause indicator so users can scroll back
-        // maybe make it automatic on scrollback ...
-        this.scrollTop = this.scrollHeight; // scroll to bottom
-      });
+      var data = JSON.parse(msg.data);
+      if (not_initialized) {
+        chart = score_chart(data);
+        not_initialized = false;
+      } else {
+        chart.update(data);
+      }
     };
   };
 }
