@@ -73,7 +73,7 @@ F7U12.prototype.render = function (target) {
   // not safe across multiple calls ... does it matter?
   game.container = pagediv.append("div").classed("f7u12-grid", true);
 
-  var cells = game.container.selectAll(".f7u12-cell")
+  game.cell_divs = game.container.selectAll(".f7u12-cell")
     .data(game.cells)
     .enter()
     .append("div")
@@ -83,20 +83,22 @@ F7U12.prototype.render = function (target) {
          if (i % game.width == 0) { return "clear: both;" }
       })
     .text(F7U12.print);
+};
 
-  // set up transitions on value changes, doesn't do much yet
-  cells.transition().tween("text", function(d,i) {
-    var old = parseInt(this.textContent) || 0;
+// assuming the grid has been changed on the object with
+// game.grid = [...], update the board with those new values
+// TODO: d3 transitions
+F7U12.prototype.update = function () {
+  // cells are only ever updated, never added or removed
+  // there is no need to call enter() / exit()
+  var game = this;
 
-    if (d === 0 && old === 0) {
-      return null;
-    }
-
-    var i = d3.interpolateRound(old, d);
-    return function(t) {
-      this.textContent = i(t);
-    };
-  });
+  if (game.visible) {
+    game.cell_divs
+      .data(game.cells)
+      .attr("classed", F7U12.cell_class)
+      .text(F7U12.print);
+  }
 };
 
 // calculate the from/to coordinates for use in slide() & merge()
@@ -181,12 +183,7 @@ F7U12.prototype.slide = function (dir, prev_count) {
     return game.cells[i];
   });
 
-  if (game.visible) {
-    game.container.selectAll(".f7u12-cell")
-      .data(updated)
-      .attr("class", F7U12.cell_class)
-      .text(F7U12.print);
-  }
+  game.update();
 
   if (dirty) {
     game.slide(dir, count);
@@ -224,12 +221,7 @@ F7U12.prototype.merge = function (dir) {
 
   game.score += score;
 
-  if (game.visible) {
-    game.container.selectAll(".f7u12-cell")
-      .data(updated)
-      .attr("class", F7U12.cell_class)
-      .text(F7U12.print);
-  }
+  game.update();
 
   return merged.filter(function (val) { if (val > 0) { return true; } else { return false; } });
 };
@@ -321,12 +313,8 @@ F7U12.prototype.insert = function () {
   // take the first value and assign 2 or 4 at random
   game.cells[available[0]] = d3.shuffle([2,4])[0];
 
-  if (game.visible) {
-    game.container.selectAll(".f7u12-cell")
-      .data(game.cells)
-      .attr("class", F7U12.cell_class)
-      .text(F7U12.print);
-  }
+  // display the new grid (if visible)
+  game.update();
 
   // serialize() saves these values, handy for replays, etc.
   game.latest_tile_idx = available[0];
@@ -366,10 +354,14 @@ F7U12.prototype.serialize = function () {
 // render the board with count values on it
 // returns the indexes of the tiles inserted
 F7U12.prototype.init = function (count) {
-  this.render();
   var tiles = [];
   for (var i=0; i<count; i++) {
     tiles.push(this.insert());
   }
+
+  if (this.visible) {
+    this.update();
+  }
+
   return tiles;
 };
