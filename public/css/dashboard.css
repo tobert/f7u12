@@ -10,7 +10,7 @@ body {
   -ms-user-select: none;     /* IE 10  */
   -o-user-select: none;
   user-select: none;
-  font-family: 'Inconsolata', monospace;
+  font-family: 'Consolas', 'Inconsolata', monospace;
 }
 
 h1 { font-size: 80px; text-align: center; }
