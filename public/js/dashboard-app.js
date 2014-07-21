@@ -122,6 +122,7 @@ $(function() {
     WIDGETS.ai_move_chart.draw();
     // TODO: actually wire up data in the update
     WIDGETS.ai_move_chart.dash_update = function () {
+      WIDGETS.ai_move_chart.data = DATA.ai_moves;
       WIDGETS.ai_move_chart.draw();
     };
 
@@ -133,6 +134,7 @@ $(function() {
     WIDGETS.human_move_chart.draw();
     // TODO: actually wire up data in the update
     WIDGETS.human_move_chart.dash_update = function () {
+      WIDGETS.human_move_chart.data = DATA.human_moves;
       WIDGETS.human_move_chart.draw();
     };
 
