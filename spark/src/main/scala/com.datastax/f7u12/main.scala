@@ -80,13 +80,17 @@ object F7U12 {
     val human_games = games.filter(g => (g._2.Player.getOrElse[String]("Unknown") != "AI"))
     val human_grids = grids.filter(g => (g.Player.getOrElse[String]("Unknown") != "AI"))
 
-    // analyze human move latency
     val human_scores = human_games.map(game => (game._1, (game._2.Score.getOrElse[Float](0))))
 
     // get the indexes of human_topN, add the dimension name string, then save to Cassandra
     val human_topN = human_scores.takeOrdered(10)(order_by_score.reverse)
     val human_topN_with_rank = sc.parallelize(human_topN).zipWithIndex.map(t => ("human_topN", t._2 + 1, t._1._1, t._1._2))
         human_topN_with_rank.saveToCassandra(keyspace, "top_games", Seq("dimension", "rank", "game_id", "score"))
+
+	// get average score per turn across all human games
+    val turn_scores = human_grids.map(grid => (grid.TurnId, grid.Score.getOrElse[Float](0)))
+    val human_score_avg_by_turn = turn_scores.groupByKey().map(turn => ("human", turn._1, turn._2.reduce(_+_)/turn._2.count(v => true)))
+    human_score_avg_by_turn.saveToCassandra("f7u12", "avg_score_by_turn", Seq("name", "turn_id", "avg_score"))
 
     // get per-game move counts
     val game_dirs = grids_kv.filter(g => g._2.Direction != "").groupByKey().map(g => Seq(g._1, g._2.groupBy(_.Direction).map(g => (g._1, g._2.count(_ => true)))))

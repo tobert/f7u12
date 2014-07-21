@@ -42,11 +42,11 @@ CREATE TABLE dir_counts (
     PRIMARY KEY(game_id)
 );
 
-CREATE TABLE move_ms_histogram (
-    game_id   timeuuid,
-    bucket    int,
-    turn_ms   double,
-    PRIMARY KEY(game_id, bucket)
+CREATE TABLE avg_score_by_turn (
+    name      text,
+    turn_id   int,
+    avg_score double,
+    PRIMARY KEY((name,turn_id), avg_score)
 );
 
 // vim: et ts=4 sw=4 ai smarttab
