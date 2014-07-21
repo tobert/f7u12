@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gocql/gocql"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 )
@@ -75,17 +76,17 @@ func GetGame(cass *gocql.Session, id gocql.UUID) (list Game, err error) {
 }
 
 func GridHandler(w http.ResponseWriter, r *http.Request) {
-	g := Grid{}
-	dec := json.NewDecoder(r.Body)
-	err := dec.Decode(&g)
-	if err != nil {
-		log.Printf("PUT invalid json data: %s", err)
-		http.Error(w, fmt.Sprintf("PUT invalid json data: %s", err), 500)
-	}
-
 	switch r.Method {
 	case "PUT":
-		err := g.Save(cass)
+		g := Grid{}
+		dec := json.NewDecoder(r.Body)
+		err := dec.Decode(&g)
+		if err != nil {
+			log.Printf("PUT invalid json data: %s", err)
+			http.Error(w, fmt.Sprintf("PUT invalid json data: %s", err), 500)
+		}
+
+		err = g.Save(cass)
 		if err != nil {
 			log.Printf("Write to Cassandra failed: %s", err)
 			http.Error(w, "Write to Cassandra failed!", 500)
@@ -94,4 +95,27 @@ func GridHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("method '%s' not implemented", r.Method), 500)
 		return
 	}
+}
+
+func GameHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	game_id, err := gocql.ParseUUID(vars["game_id"])
+	if err != nil {
+		http.Error(w, fmt.Sprintf("could not parse game_id (uuid expected): '%s'", err), 500)
+		return
+	}
+
+	game, err := GetGame(cass, game_id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cassandra query failed: %s", err), 500)
+		return
+	}
+
+	json, err := json.Marshal(game)
+	if err != nil {
+		log.Printf("JSON marshal failed: %s\n", err)
+		http.Error(w, fmt.Sprintf("Marshaling JSON failed: %s", err), 500)
+	}
+
+	w.Write(json)
 }

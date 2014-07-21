@@ -50,6 +50,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/grid", GridHandler)
+	r.HandleFunc("/game/{game_id:[-a-f0-9]+}", GameHandler)
 	r.HandleFunc("/counts", CountsHandler)
 	r.HandleFunc("/recent", RecentGamesHandler)
 	r.HandleFunc("/top_games/{dimension:[-_a-zA-Z0-9]+}", TopGamesHandler)
