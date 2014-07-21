@@ -22,6 +22,8 @@ $(function() {
   // the other updates content on the page using data in DATA
   // These will be out of sync a little but it should be no big deal
   // since the code below is written to keep them independent.
+  // This should probably be replaced by some kind of library that
+  // hooks up to websockets nicely, but for now this is good enough.
   var DATA = {};
   DATA.update = function () {
       d3.json("/counts", function (data) { DATA.counts = data; split_counts(data); });
@@ -50,10 +52,6 @@ $(function() {
   WIDGETS.timer = $.timer(WIDGETS.update, 1000, true);
 
   // returns an updater that can be attached to games
-  // [
-  //   {"player":"player1","game_id":"a7b4b75e-1064-11e4-b60f-d7c68c1253b9"},
-  //   {"player":"AI","game_id":"a111a666-1064-11e4-8310-378fd8cad532"}
-  // ]
   var make_grid_updater = function (game) {
     return function () {
       var id = DATA.recent_games.filter(function (d) {
@@ -67,15 +65,13 @@ $(function() {
       }
 
       d3.json("/game/" + (id.game_id || "id-missing"), function (data) {
-        game.cells = data;
+        game.cells = data[data.length - 1].state;
         game.update();
       });
     };
   };
 
-  //var game = new F7U12(4);
-  //    game.render("#grid1");
-
+  // TODO: add the human grid and align it
   WIDGETS.grid2 = new F7U12(4);
   WIDGETS.grid2.player = "AI";
   WIDGETS.grid2.render("#grid2");
@@ -124,6 +120,7 @@ $(function() {
     WIDGETS.ai_move_chart.addMeasureAxis("y", "value");
     WIDGETS.ai_move_chart.addSeries("value", dimple.plot.bar);
     WIDGETS.ai_move_chart.draw();
+    // TODO: actually wire up data in the update
     WIDGETS.ai_move_chart.dash_update = function () {
       WIDGETS.ai_move_chart.draw();
     };
@@ -134,6 +131,7 @@ $(function() {
     WIDGETS.human_move_chart.addMeasureAxis("y", "value");
     WIDGETS.human_move_chart.addSeries("value", dimple.plot.bar);
     WIDGETS.human_move_chart.draw();
+    // TODO: actually wire up data in the update
     WIDGETS.human_move_chart.dash_update = function () {
       WIDGETS.human_move_chart.draw();
     };
