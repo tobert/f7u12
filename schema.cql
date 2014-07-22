@@ -45,7 +45,7 @@ CREATE TABLE dir_counts (
 CREATE TABLE avg_score_by_turn (
     name      text,
     turn_id   int,
-    avg_score double,
+    avg_score float,
     PRIMARY KEY((name,turn_id), avg_score)
 );
 
