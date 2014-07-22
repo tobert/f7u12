@@ -5,31 +5,31 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="author" content="@AlTobey">
-    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/f7u12.css" />
     <link rel="stylesheet" href="css/app.css" />
 </head>
 
 <body>
     <div class="container-fluid">
-      <form class="form-inline" role="form">
-         <div class="form-group">
-           <button type="button" id="run-button" data-loading-text="Running..." class="btn btn-primary">
-             Run! <span class="glyphicon glyphicon-fast-forward"></span>
-           </button>
+      <div class="row">
+        <div class="col-sm-2">
+          <button type="button" id="run-button" data-loading-text="Running..." class="btn btn-primary">
+            Run! <span class="glyphicon glyphicon-fast-forward"></span>
+          </button>
         </div>
-         <div class="form-group">
-           <label class="sr-only" for="iterations">Iterations</label>
-           <input type="text" class="form-control" id="iterations" value="10">
+        <div class="col-sm-2" id="count">
         </div>
-      </form>
-      <div id="player1-container"></div>
+        <div class="col-sm-8">
+          <div id="player1-container"></div>
+        </div>
+      </div>
     </div>
 
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script src="js/jquery-2.1.1.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
     <script src="js/jquery.touchSwipe.min.js"></script>
+    <script src="js/jquery.timer.js"></script>
     <script src="js/d3.v3.min.js"></script>
     <script src="js/performance-now-polyfill.js"></script>
     <script src="js/f7u12.js"></script>
@@ -37,14 +37,21 @@
     <script src="js/uuid.js"></script>
     <script src="js/ai.js"></script>
     <script>
+      var i = 0;
+      var timer = $.timer(function () {
+        var start = performance.now();
+        var game = F7U12.run();
+        console.log("iteration " + i + " took ", performance.now() - start);
+        d3.select("#player1-container").selectAll("div").remove();
+        game.render("#player1-container");
+        i++;
+        d3.select("#count").text(i);
+      }, 1000, true);
+
+      timer.pause();
+
       $("#run-button").on("click", function () {
-         var iters = d3.select("#iterations").node().value;
-         for (var i=1; i<=iters; i++) {
-           var start = performance.now();
-           var game = F7U12.run();
-           console.log("iteration " + i + "/" + iters, " took ", performance.now() - start);
-           game.render("#player1-container");
-         }
+        timer.play();
       });
     </script>
   </body>
