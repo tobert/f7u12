@@ -49,18 +49,29 @@ $(function() {
   // TODO: add play/pause buttons?
   // these will run a litle out of sync and that's OK for now
   DATA.timer = $.timer(DATA.update, 1000, true);
-  WIDGETS.timer = $.timer(WIDGETS.update, 1000, true);
+  WIDGETS.timer = $.timer(WIDGETS.update, 200, true);
 
   // returns an updater that can be attached to games
   var make_grid_updater = function (game) {
     return function () {
+      if (typeof DATA.recent_games != "object" || typeof game == "undefined") {
+        return;
+      };
+
       var id = DATA.recent_games.filter(function (d) {
-        return d.player == WIDGETS.grid2.player
+        // hacks: these should never be undef
+        if (typeof d == "undefined") {
+          return false;
+        }
+        if (d.hasOwnProperty("player") && game.hasOwnProperty("player")) {
+          return d.player == game.player
+        }
+        return false;
       })[0];
 
       // probably the first update
       if (id == undefined) {
-        console.log("No game ID fround for player:", WIDGETS.grid2.player);
+        console.log("No game ID fround for player:", game.player);
         return;
       }
 
@@ -72,10 +83,20 @@ $(function() {
   };
 
   // TODO: add the human grid and align it
+  WIDGETS.grid1 = new F7U12(4);
+  WIDGETS.grid1.player = "player1";
+  WIDGETS.grid1.render("#grid1");
+  WIDGETS.grid1.dash_update = make_grid_updater(WIDGETS.grid1);
+
   WIDGETS.grid2 = new F7U12(4);
-  WIDGETS.grid2.player = "AI";
+  WIDGETS.grid2.player = "player2";
   WIDGETS.grid2.render("#grid2");
   WIDGETS.grid2.dash_update = make_grid_updater(WIDGETS.grid2);
+
+  WIDGETS.grid3 = new F7U12(4);
+  WIDGETS.grid3.player = "AI";
+  WIDGETS.grid3.render("#grid3");
+  WIDGETS.grid3.dash_update = make_grid_updater(WIDGETS.grid3);
 
   d3.json("/top_games/human_topN", function (data) {
     DATA.human_topn = data;
@@ -95,9 +116,8 @@ $(function() {
     };
   });
 
-  var svg1 = dimple.newSvg("#graph1", 590, 400);
-  var svg2 = dimple.newSvg("#graph2", 590, 400);
-  var svg3 = dimple.newSvg("#graph3", 590, 400);
+  var svg1 = dimple.newSvg("#graph1", 600, 200);
+  var svg2 = dimple.newSvg("#graph2", 600, 200);
 
   var split_counts = function (data) {
     var re = /^(ai|human)_(up|down|left|right)/;
@@ -114,8 +134,9 @@ $(function() {
   d3.json("/counts", function (data) {
     split_counts(data);
 
+  //var svg2 = dimple.newSvg("#graph2", 590, 400);
     WIDGETS.ai_move_chart = new dimple.chart(svg2, DATA.ai_moves);
-    WIDGETS.ai_move_chart.setBounds(60, 30, 430, 330);
+    WIDGETS.ai_move_chart.setBounds(60, 30, 440, 130);
     WIDGETS.ai_move_chart.addCategoryAxis("x", "name");
     WIDGETS.ai_move_chart.addMeasureAxis("y", "value");
     WIDGETS.ai_move_chart.addSeries("value", dimple.plot.bar);
@@ -127,7 +148,7 @@ $(function() {
     };
 
     WIDGETS.human_move_chart = new dimple.chart(svg1, DATA.human_moves);
-    WIDGETS.human_move_chart.setBounds(60, 30, 430, 330);
+    WIDGETS.human_move_chart.setBounds(60, 30, 440, 130);
     WIDGETS.human_move_chart.addCategoryAxis("x", "name");
     WIDGETS.human_move_chart.addMeasureAxis("y", "value");
     WIDGETS.human_move_chart.addSeries("value", dimple.plot.bar);
