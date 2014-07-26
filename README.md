@@ -1,8 +1,10 @@
-fffffffuuuuuuuuuuuu
-===================
+f7u12
+=====
 
 This is a demo project for generating metrics to store in
-Cassandra and query with CQL or Spark.
+Cassandra and query with CQL and Spark.
+
+One of the other open source implementations of 2048 says "The best game you'll ever hate." That made me think of rage guy, so here we are.
 
 Usage
 =====
@@ -25,12 +27,14 @@ Dependencies
 ============
 
 Only Cassandra has to be running to run and play the game. The
-game will run fine on its own in a normal webserver. The XHRs
-will fail but it does not break the game. It does reference
-a couple CDN links. The assets are also checked in, so making it
-work offline only requires changing the CDN links in the html files.
+game uses the embedded webserver to serve assets. All UI is static
+or generated client-side.
 
-The Spark job needs Cassandra running.
+Without the Go app running, the XHRs
+will fail but it does not break the game. Libraries are checked in
+and referenced locally because conference networks are unreliable.
+
+The Spark job needs Cassandra running and does not contact the Go app.
 
 Components
 ==========
@@ -44,14 +48,9 @@ Status
 ======
 
 * Game is playable and sends every move to the Go app immediately.
-* Go backend is basically complete. Moving to a more REST-compliant URL scheme might be nice.
+* Go backend is complete. Moving to a more REST-compliant URL scheme might be nice.
 * Spark job processes the move data and stores aggregates in Cassandra (that are readable through the Go app).
-* Dashboards in progress.
-
-
-
-
-
+* Dashboard was demoed. Lots of ways to expand it.
 
 Security
 ========
