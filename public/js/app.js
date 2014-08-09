@@ -78,7 +78,7 @@ $(function() {
 
   var target = "#player1-container";
   var game = make_game(target);
-      game.set_name("player1");
+      game.name = "player1";
 
   // feeds move data back for updating the graph
   start_websocket(game.uuid, target);

@@ -74,7 +74,7 @@ $(function() {
   F7U12.run = function () {
     var game = new F7U12(4); // 4x4 grid
         game.init(2); // start with 2 tiles
-        game.set_name("AI");
+        game.name = "AI";
         game.uuid = UUIDjs.create(1).toString();
 
     // send the starting board to the server
