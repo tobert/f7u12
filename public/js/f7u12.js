@@ -49,12 +49,10 @@ var F7U12 = function (width) {
   }
 };
 
-// render the board with count values on it
-// returns the indexes of the tiles inserted
 /**
  * Places starting tiles on the board and renders it if this.visibility = true.
  * @param {Number} count number of tiles to place on the board
- * @return {Array.<Number>}
+ * @return {Array.<Number>} indexes of the tiles inserted
  */
 F7U12.prototype.init = function (count) {
   var tiles = [];
@@ -472,4 +470,5 @@ F7U12.print = function (d) {
     return "";
   }
 };
+
 // vim: et ts=2 sw=2 ai smarttab
