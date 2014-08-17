@@ -16,4 +16,6 @@ spark/src/target/
 .scala_dependencies
 .worksheet
 
+# binaries
 f7u12
+balance_board/balance_board
