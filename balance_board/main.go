@@ -80,8 +80,6 @@ func handle_device(dev string) {
 			log.Printf("xwii_iface_poll failed on device %s: %d\n", dev, int(cerr))
 		}
 
-		fmt.Printf("RF  , RR  , LF  , LR  , Total\n", a, b, c, d, (a + b + c + d))
-
 		// only the balance board was requested, ignore everything else
 		switch ev._type {
 		case C.XWII_EVENT_BALANCE_BOARD:
