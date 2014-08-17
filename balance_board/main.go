@@ -42,7 +42,7 @@ func main() {
 		cdev := C.xwii_monitor_poll(xmon)
 		gdev := C.GoString(cdev)
 		C.free(unsafe.Pointer(cdev))
-		if (gdev != "") {
+		if gdev != "" {
 			go handle_device(gdev)
 		}
 	}
@@ -56,12 +56,12 @@ func handle_device(dev string) {
 	var iface *C.struct_xwii_iface
 
 	cerr := C.xwii_iface_new(&iface, cdev)
-	if (int(cerr) != 0) {
+	if int(cerr) != 0 {
 		log.Fatal("Failed to create xwiimote interface object for device %s\n", dev)
 	}
 
 	cerr = C.xwii_iface_open(iface, C.XWII_IFACE_BALANCE_BOARD)
-	if (int(cerr) != 0) {
+	if int(cerr) != 0 {
 		log.Fatalf("Failed to open xwiimote interface for device %s: %d\n", dev, int(cerr))
 	}
 
@@ -74,9 +74,9 @@ func handle_device(dev string) {
 	for {
 		// poll the device, may return EAGAIN
 		cerr = C.xwii_iface_poll(iface, &ev)
-		if (int(cerr) == -11) { // EAGAIN
+		if int(cerr) == -11 { // EAGAIN
 			continue
-		} else if (int(cerr) != 0) {
+		} else if int(cerr) != 0 {
 			log.Printf("xwii_iface_poll failed on device %s: %d\n", dev, int(cerr))
 		}
 
