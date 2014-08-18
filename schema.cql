@@ -75,6 +75,6 @@ CREATE TABLE balance_board_input (
     lf_stdev    int,
     lr_stdev    int,
     PRIMARY KEY((bucket,mac), ts)
-);
+) WITH CLUSTERING ORDER BY (ts DESC);
 
 // vim: et ts=4 sw=4 ai smarttab
