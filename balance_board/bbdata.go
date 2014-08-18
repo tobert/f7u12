@@ -26,46 +26,37 @@ import (
 )
 
 type Dir int
-
-func (d Dir) String() string {
-	if d == DIR_UP {
-		return "up"
-	} else if (d == DIR_DOWN) {
-		return "down"
-	} else if (d == DIR_LEFT) {
-		return "left"
-	} else if (d == DIR_RIGHT) {
-		return "right"
-	} else {
-		return "none"
-	}
-}
+type Sensor int
 
 const (
-	DIR_UP    Dir = 0
-	DIR_DOWN  Dir = 1
-	DIR_LEFT  Dir = 2
-	DIR_RIGHT Dir = 3
-	DIR_NONE  Dir = 4
+	DIR_UP    Dir    = 0
+	DIR_DOWN  Dir    = 1
+	DIR_LEFT  Dir    = 2
+	DIR_RIGHT Dir    = 3
+	DIR_NONE  Dir    = 4
+	SENSOR_RF Sensor = 0 // right front
+	SENSOR_RR Sensor = 1 // right rear
+	SENSOR_LF Sensor = 2 // left front
+	SENSOR_LR Sensor = 3 // left rear
 )
 
-type BBsensor [4]uint32
+// indexes should always use SENSOR_{RF,RR,LF,LR} constants
+type BBsensor [4]uint16
 
 type BBdata struct {
-	TS time.Time // timestamp
-	// right front / right rear / left front / left rear
+	TS     time.Time
 	Sensor BBsensor
 	Dir    Dir
 }
 
-func (bbd BBsensor) Total() (total uint32) {
+func (bbd BBsensor) Total() (total uint16) {
 	for _, v := range bbd {
 		total += v
 	}
 	return
 }
 
-func (bbd BBsensor) Average() uint32 {
+func (bbd BBsensor) Average() uint16 {
 	return bbd.Total() / 4
 }
 
@@ -76,26 +67,28 @@ func (bbd *BBdata) String() string {
 }
 
 type BBbucket struct {
-	Data []BBdata
-	Idx  int
-	Size int // only the requested size, don't use for computing indices!
+	Data  []*BBdata
+	Count int
+	Idx   int
+	Size  int // only the requested size, don't use for computing indices!
 }
 
-type BBvals []uint32
+type BBvals []uint16
 
 func (v BBvals) Len() int           { return len(v) }
 func (v BBvals) Less(i, j int) bool { return v[i] < v[j] }
 func (v BBvals) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 
 type BBsummary struct {
-	Count     uint32   `json:"count"`
+	Count     uint16   `json:"count"`
 	Period    int      `json:"period"`
-	Min       uint32   `json:"min"`
-	Max       uint32   `json:"max"`
-	Sum       uint32   `json:"sum"`
-	Mean      uint32   `json:"mean"`
-	Variance  uint32   `json:"variance"`
-	Stdev     uint32   `json:"stdev"`
+	Weight    float64  `json:"weight"`
+	Min       uint16   `json:"min"`
+	Max       uint16   `json:"max"`
+	Sum       uint16   `json:"sum"`
+	Mean      uint16   `json:"mean"`
+	Variance  uint16   `json:"variance"`
+	Stdev     uint16   `json:"stdev"`
 	Dist      BBsensor `json:"dist"` // distribution of weight by percent
 	Dirs      [5]Dir   `json:"dirs"`
 	SSum      BBsensor `json:"sums"` // individual sensors
@@ -107,29 +100,39 @@ type BBsummary struct {
 	P50       BBsensor `json:"p50"`
 	P75       BBsensor `json:"p75"`
 	P95       BBsensor `json:"p95"`
-	First     BBdata   `json:"first"`
-	Last      BBdata   `json:"last"`
+	First     *BBdata  `json:"first"`
+	Last      *BBdata  `json:"last"`
 }
 
 func NewBBbucket(size int) (out BBbucket) {
 	out.Size = size
-	out.Data = make([]BBdata, size)
+	out.Data = make([]*BBdata, size)
+	for i, _ := range out.Data {
+		out.Data[i] = &BBdata{}
+	}
 	return out
 }
 
 // inserts a BBdata event into the bucket and advances the index
 // by one, rolling over to 0 as needed
-func (bbb *BBbucket) Insert(d BBdata) int {
-	// wrap around
-	if bbb.Idx == len(bbb.Data)-1 {
-		bbb.Idx = 0
-	} else {
-		bbb.Idx += 1
-	}
-
+func (bbb *BBbucket) Insert(d *BBdata) {
 	bbb.Data[bbb.Idx] = d
 
-	return bbb.Idx
+	// wrap around
+	bbb.Idx += 1
+	if bbb.Idx == len(bbb.Data) {
+		bbb.Idx = 0
+	}
+
+	bbb.Count += 1
+}
+
+func (bbb *BBbucket) Reset() {
+	for i, _ := range bbb.Data {
+		bbb.Data[i] = &BBdata{}
+	}
+	bbb.Idx = 0
+	bbb.Count = 0
 }
 
 // window into a bucket that is another bucket
@@ -148,14 +151,20 @@ func (bbb *BBbucket) Summarize() (smry BBsummary) {
 		make(BBvals, len(bbb.Data)), // left rear
 	}
 
-	smry.Count = uint32(len(bbb.Data))
 	smry.First = bbb.Data[0]
-	smry.Last = bbb.Data[len(bbb.Data)-1]
-
-	prev := &bbb.Data[0]
+	prev := bbb.Data[0]
 	for i, d := range bbb.Data {
+		if i > bbb.Count {
+			break
+		}
+
 		total := d.Sensor.Total()
 		smry.Sum += total
+		smry.Count += 1
+		smry.Last = d
+
+		// counts by direction detected
+		smry.Dirs[d.Dir] += 1
 
 		// time elapsed since previous event
 		smry.Period += (prev.TS.Nanosecond() - d.TS.Nanosecond())
@@ -174,9 +183,7 @@ func (bbb *BBbucket) Summarize() (smry BBsummary) {
 			smry.SSum[s] += d.Sensor[s]
 		}
 
-		smry.Dirs[d.Dir] += 1
-
-		prev = &d
+		prev = d
 	}
 
 	// mean time elapsed between samples
@@ -186,11 +193,11 @@ func (bbb *BBbucket) Summarize() (smry BBsummary) {
 	// mean for each sensor & percentage of weight on each sensor
 	for s, _ := range smry.SSum {
 		smry.SMean[s] = smry.SSum[s] / smry.Count
-		smry.Dist[s] = uint32(math.Ceil((float64(smry.SSum[s]) / float64(smry.SSum.Total())) * 100))
+		smry.Dist[s] = uint16(math.Ceil((float64(smry.SSum[s]) / float64(smry.SSum.Total())) * 100))
 	}
 
 	// distance from the mean squared for stdev
-	var dsum uint32
+	var dsum uint16
 	var dsums BBsensor
 	for _, d := range bbb.Data {
 		diff := d.Sensor.Total() - smry.Mean
@@ -204,10 +211,10 @@ func (bbb *BBbucket) Summarize() (smry BBsummary) {
 
 	// variance & stdev
 	smry.Variance = dsum / smry.Count
-	smry.Stdev = uint32(math.Ceil(math.Sqrt(float64(smry.Variance))))
+	smry.Stdev = uint16(math.Ceil(math.Sqrt(float64(smry.Variance))))
 	for s, _ := range dsums {
 		smry.SVariance[s] = dsums[s] / smry.Count
-		smry.SStdev[s] = uint32(math.Ceil(math.Sqrt(float64(smry.SVariance[s]))))
+		smry.SStdev[s] = uint16(math.Ceil(math.Sqrt(float64(smry.SVariance[s]))))
 	}
 
 	// percentiles
@@ -226,5 +233,36 @@ func (bbb *BBbucket) Summarize() (smry BBsummary) {
 		smry.P95[i] = sensor[idx(95)]
 	}
 
+	// fill in weight using the P50 value
+	smry.Weight = float64(smry.P50[0]+smry.P50[1]+smry.P50[2]+smry.P50[3]) * 2.2046226218
+
 	return smry
+}
+
+func (d Dir) String() string {
+	if d == DIR_UP {
+		return "up"
+	} else if d == DIR_DOWN {
+		return "down"
+	} else if d == DIR_LEFT {
+		return "left"
+	} else if d == DIR_RIGHT {
+		return "right"
+	} else {
+		return "none"
+	}
+}
+
+func (s Sensor) String() string {
+	switch s {
+	case SENSOR_RF:
+		return "right-front"
+	case SENSOR_RR:
+		return "right-rear"
+	case SENSOR_LF:
+		return "left-front"
+	case SENSOR_LR:
+		return "left-rear"
+	}
+	return "ERROR"
 }

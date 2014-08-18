@@ -26,15 +26,19 @@ import "C"
 
 import (
 	"encoding/binary"
-	//"encoding/json"
 	"fmt"
 	"log"
 	"time"
 	"unsafe"
 )
 
+const (
+	SENSOR_THRESHOLD uint16 = 30 // percent of total weight to determine sensor is chosen
+	THRESHOLD_COUNT         = 10 // number of readings in dir before recording it
+)
+
 func main() {
-	fmt.Printf("Started\n")
+	fmt.Printf("Program started.\n")
 
 	// the xwii monitor watches udev for new devices
 	xmon := C.xwii_monitor_new(true, false)
@@ -87,7 +91,10 @@ func handle_device(dev string) {
 	// a ring buffer of sensor data
 	ring := NewBBbucket(10)
 
-	// might make sense to put a timer on this
+	/* Poll the device and process every event it sends. Place events into ring and
+	 * check for thresholds on every pass. Once a pair of sensors cross SENSOR_THRESHOLD
+	 * percent of the total mass on the board for THRESHOLD_COUNT readings, record
+	 * the chosen direction */
 	for {
 		// poll the device
 		// will try again on the next pass if it returns EAGAIN,
@@ -103,29 +110,38 @@ func handle_device(dev string) {
 		// only the balance board was requested, ignore everything else
 		switch ev._type {
 		case C.XWII_EVENT_BALANCE_BOARD:
-			// convert the pressure sensor data to integers
-			rf := binary.LittleEndian.Uint32(ev.v[0:4])   // right front 0
-			rr := binary.LittleEndian.Uint32(ev.v[12:16]) // right rear  1
-			lf := binary.LittleEndian.Uint32(ev.v[24:28]) // left front  2
-			lr := binary.LittleEndian.Uint32(ev.v[36:40]) // left rear   3
+			// these values are already calibrated by the hid-wiimote kernel module
+			// see: https://github.com/torvalds/linux/blob/master/drivers/hid/hid-wiimote-modules.c#L1348
+			vals := BBsensor{}
+			vals[SENSOR_RF] = binary.LittleEndian.Uint16(ev.v[0:4])
+			vals[SENSOR_RR] = binary.LittleEndian.Uint16(ev.v[12:16])
+			vals[SENSOR_LF] = binary.LittleEndian.Uint16(ev.v[24:28])
+			vals[SENSOR_LR] = binary.LittleEndian.Uint16(ev.v[36:40])
 
-			bbd := BBdata{time.Now(), [4]uint32{rf, rr, lf, lr}, DIR_NONE}
-			ring.Insert(bbd)
+			bbd := BBdata{time.Now(), vals, DIR_NONE}
+			ring.Insert(&bbd)
 
 			smry := ring.Summarize()
 
-			thresh := uint32(30)
-			if smry.Dist[0] > thresh && smry.Dist[1] > thresh { // RF & RR
+			if smry.Dist[SENSOR_RF] > SENSOR_THRESHOLD && smry.Dist[SENSOR_RR] > SENSOR_THRESHOLD {
 				bbd.Dir = DIR_RIGHT
-			} else if smry.Dist[2] > thresh && smry.Dist[3] > thresh { // LF & LR
+			} else if smry.Dist[SENSOR_LF] > SENSOR_THRESHOLD && smry.Dist[SENSOR_LR] > SENSOR_THRESHOLD {
 				bbd.Dir = DIR_LEFT
-			} else if smry.Dist[0] > thresh && smry.Dist[2] > thresh { // RF & LF
+			} else if smry.Dist[SENSOR_RF] > SENSOR_THRESHOLD && smry.Dist[SENSOR_LF] > SENSOR_THRESHOLD {
 				bbd.Dir = DIR_UP
-			} else if smry.Dist[1] > thresh && smry.Dist[3] > thresh { // RR & LR
+			} else if smry.Dist[SENSOR_RR] > SENSOR_THRESHOLD && smry.Dist[SENSOR_LR] > SENSOR_THRESHOLD {
 				bbd.Dir = DIR_DOWN
+			} else {
+				bbd.Dir = DIR_NONE
 			}
 
-			fmt.Printf("% 5s (% 2d): % 6d, % 6d, rf(% 4d), rr(% 4d), lf(% 4d), lr(% 4d)\n", bbd.Dir, smry.Dirs[bbd.Dir], smry.Sum, smry.Stdev, smry.Dist[0], smry.Dist[1], smry.Dist[2], smry.Dist[3])
+			// make the dir count accurate since direction is guessed after computing the summary
+			smry.Dirs[bbd.Dir] += 1
+
+			if smry.Dirs[bbd.Dir] > THRESHOLD_COUNT {
+				fmt.Printf("% 5s: % 8f, % 6d, rf(% 4d), rr(% 4d), lf(% 4d), lr(% 4d)\n", bbd.Dir, smry.Weight, smry.Stdev, smry.Dist[0], smry.Dist[1], smry.Dist[2], smry.Dist[3])
+				ring.Reset()
+			}
 		default:
 			log.Printf("Unrecognized event type: %d\n", int(ev._type))
 		}
