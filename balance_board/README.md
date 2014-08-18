@@ -6,6 +6,24 @@ be fed to the f7u12 2048 game.  Since it relies on functionality provided
 by the Linux kernel (hid-wiimote.ko) and BlueZ 5.21, it only works on
 Linux at present.
 
+Dependencies
+============
+
+This program uses cgo to interface with xwiimote, which does most of the
+heavy lifting and integrates with the hid-wiimote kernel module.
+
+Build
+=====
+
+As long as the xwiimote shared library and headers are installed
+correctly with pkg-config info, it should build without any extra
+dependencies.
+
+```
+sudo pacman -S xwiimote
+go build
+```
+
 Usage
 =====
 
