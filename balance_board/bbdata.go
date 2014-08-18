@@ -80,28 +80,30 @@ func (v BBvals) Less(i, j int) bool { return v[i] < v[j] }
 func (v BBvals) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 
 type BBsummary struct {
-	Count     int     `json:"count"`
-	Period    int     `json:"period"`
-	Weight    int     `json:"weight"`
-	Min       int     `json:"min"`
-	Max       int     `json:"max"`
-	Sum       int     `json:"sum"`
-	Mean      int     `json:"mean"`
-	Variance  int     `json:"variance"`
-	Stdev     int     `json:"stdev"`
-	Dirs      [5]Dir  `json:"dirs"`
-	SPercent  BBevent `json:"dist"` // distribution of weight by percent
-	SSum      BBevent `json:"sums"` // individual sensors
-	SMean     BBevent `json:"means"`
-	SVariance BBevent `json:"variances"`
-	SStdev    BBevent `json:"stdevs"`
-	P5        BBevent `json:"p5"`
-	P25       BBevent `json:"p25"`
-	P50       BBevent `json:"p50"`
-	P75       BBevent `json:"p75"`
-	P95       BBevent `json:"p95"`
-	First     *BBdata `json:"first"`
-	Last      *BBdata `json:"last"`
+	Timestamp  time.Time `json:"timestamp"`
+	MacAddress string    `json:"mac_address"`
+	Count      int       `json:"count"`
+	Period     int       `json:"period"`
+	Weight     int       `json:"weight"`
+	Min        int       `json:"min"`
+	Max        int       `json:"max"`
+	Sum        int       `json:"sum"`
+	Mean       int       `json:"mean"`
+	Variance   int       `json:"variance"`
+	Stdev      int       `json:"stdev"`
+	Dirs       [5]Dir    `json:"dirs"`
+	SPercent   BBevent   `json:"dist"` // distribution of weight by percent
+	SSum       BBevent   `json:"sums"` // individual sensors
+	SMean      BBevent   `json:"means"`
+	SVariance  BBevent   `json:"variances"`
+	SStdev     BBevent   `json:"stdevs"`
+	P5         BBevent   `json:"p5"`
+	P25        BBevent   `json:"p25"`
+	P50        BBevent   `json:"p50"`
+	P75        BBevent   `json:"p75"`
+	P95        BBevent   `json:"p95"`
+	First      *BBdata   `json:"first"`
+	Last       *BBdata   `json:"last"`
 }
 
 func NewBBbucket(size int) (out BBbucket) {
@@ -162,6 +164,7 @@ func (bbb *BBbucket) Summarize() (smry BBsummary) {
 		smry.Sum += total
 		smry.Count += 1
 		smry.Last = d
+		smry.Timestamp = smry.Last.TS
 
 		// counts by direction detected
 		smry.Dirs[d.Dir] += 1

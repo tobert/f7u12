@@ -27,7 +27,10 @@ import "C"
 import (
 	"encoding/binary"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"path"
+	"strings"
 	"time"
 	"unsafe"
 )
@@ -61,7 +64,15 @@ func main() {
 }
 
 func handle_device(dev string) {
-	fmt.Printf("Found device: %s\n", dev)
+	// get the Bluetooth MAC address of the device
+	mac_bytes, err := ioutil.ReadFile(path.Join(dev, "..", "address"))
+	if err != nil {
+		log.Fatalf("Could not read MAC address: %s", err)
+	}
+	mac := strings.TrimSpace(string(mac_bytes))
+
+	fmt.Printf("Found device: %s, path: %s\n", mac, dev)
+
 	// convert to a C string to pass into xwii_iface_new
 	cdev := C.CString(dev)
 	defer C.free(unsafe.Pointer(cdev))
@@ -160,6 +171,8 @@ func handle_device(dev string) {
 
 			// make the dir count accurate since direction is guessed after computing the summary
 			smry.Dirs[bbd.Dir] += 1
+			// add the MAC address to the summary struct
+			smry.MacAddress = mac
 
 			if smry.Dirs[bbd.Dir] > THRESHOLD_COUNT {
 				fmt.Printf("% 5s: % 4d, % 4d, rf(% 4d), rr(% 4d), lf(% 4d), lr(% 4d)\n", bbd.Dir, smry.Weight, smry.Stdev, smry.SPercent[0], smry.SPercent[1], smry.SPercent[2], smry.SPercent[3])
