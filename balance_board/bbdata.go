@@ -41,29 +41,29 @@ const (
 )
 
 // indexes should always use SENSOR_{RF,RR,LF,LR} constants
-type BBsensor [4]uint16
+type BBevent [4]int
 
 type BBdata struct {
-	TS     time.Time
-	Sensor BBsensor
-	Dir    Dir
+	TS   time.Time
+	Data BBevent
+	Dir  Dir
 }
 
-func (bbd BBsensor) Total() (total uint16) {
+func (bbd BBevent) Total() (total int) {
 	for _, v := range bbd {
 		total += v
 	}
 	return
 }
 
-func (bbd BBsensor) Average() uint16 {
+func (bbd BBevent) Average() int {
 	return bbd.Total() / 4
 }
 
 func (bbd *BBdata) String() string {
 	return fmt.Sprintf("% 14d, % 4d, % 4d, % 4d, % 4d, % 6d, % 4d",
-		bbd.TS.Nanosecond(), bbd.Sensor[0], bbd.Sensor[1], bbd.Sensor[2], bbd.Sensor[3],
-		bbd.Sensor.Total(), bbd.Sensor.Average())
+		bbd.TS.Nanosecond(), bbd.Data[SENSOR_RF], bbd.Data[SENSOR_RR], bbd.Data[SENSOR_LF], bbd.Data[SENSOR_LR],
+		bbd.Data.Total(), bbd.Data.Average())
 }
 
 type BBbucket struct {
@@ -73,35 +73,35 @@ type BBbucket struct {
 	Size  int // only the requested size, don't use for computing indices!
 }
 
-type BBvals []uint16
+type BBvals []int
 
 func (v BBvals) Len() int           { return len(v) }
 func (v BBvals) Less(i, j int) bool { return v[i] < v[j] }
 func (v BBvals) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 
 type BBsummary struct {
-	Count     uint16   `json:"count"`
-	Period    int      `json:"period"`
-	Weight    float64  `json:"weight"`
-	Min       uint16   `json:"min"`
-	Max       uint16   `json:"max"`
-	Sum       uint16   `json:"sum"`
-	Mean      uint16   `json:"mean"`
-	Variance  uint16   `json:"variance"`
-	Stdev     uint16   `json:"stdev"`
-	Dist      BBsensor `json:"dist"` // distribution of weight by percent
-	Dirs      [5]Dir   `json:"dirs"`
-	SSum      BBsensor `json:"sums"` // individual sensors
-	SMean     BBsensor `json:"means"`
-	SVariance BBsensor `json:"variances"`
-	SStdev    BBsensor `json:"stdevs"`
-	P5        BBsensor `json:"p5"`
-	P25       BBsensor `json:"p25"`
-	P50       BBsensor `json:"p50"`
-	P75       BBsensor `json:"p75"`
-	P95       BBsensor `json:"p95"`
-	First     *BBdata  `json:"first"`
-	Last      *BBdata  `json:"last"`
+	Count     int     `json:"count"`
+	Period    int     `json:"period"`
+	Weight    int     `json:"weight"`
+	Min       int     `json:"min"`
+	Max       int     `json:"max"`
+	Sum       int     `json:"sum"`
+	Mean      int     `json:"mean"`
+	Variance  int     `json:"variance"`
+	Stdev     int     `json:"stdev"`
+	Dirs      [5]Dir  `json:"dirs"`
+	SPercent  BBevent `json:"dist"` // distribution of weight by percent
+	SSum      BBevent `json:"sums"` // individual sensors
+	SMean     BBevent `json:"means"`
+	SVariance BBevent `json:"variances"`
+	SStdev    BBevent `json:"stdevs"`
+	P5        BBevent `json:"p5"`
+	P25       BBevent `json:"p25"`
+	P50       BBevent `json:"p50"`
+	P75       BBevent `json:"p75"`
+	P95       BBevent `json:"p95"`
+	First     *BBdata `json:"first"`
+	Last      *BBdata `json:"last"`
 }
 
 func NewBBbucket(size int) (out BBbucket) {
@@ -158,7 +158,7 @@ func (bbb *BBbucket) Summarize() (smry BBsummary) {
 			break
 		}
 
-		total := d.Sensor.Total()
+		total := d.Data.Total()
 		smry.Sum += total
 		smry.Count += 1
 		smry.Last = d
@@ -178,9 +178,9 @@ func (bbb *BBbucket) Summarize() (smry BBsummary) {
 		}
 
 		// populate the pivot lists and per-sensor sums
-		for s, _ := range d.Sensor {
-			pivot[s][i] = d.Sensor[s]
-			smry.SSum[s] += d.Sensor[s]
+		for s, _ := range d.Data {
+			pivot[s][i] = d.Data[s]
+			smry.SSum[s] += d.Data[s]
 		}
 
 		prev = d
@@ -188,33 +188,39 @@ func (bbb *BBbucket) Summarize() (smry BBsummary) {
 
 	// mean time elapsed between samples
 	smry.Period = smry.Period / int(smry.Count)
+
 	smry.Mean = smry.Sum / smry.Count
 
 	// mean for each sensor & percentage of weight on each sensor
-	for s, _ := range smry.SSum {
-		smry.SMean[s] = smry.SSum[s] / smry.Count
-		smry.Dist[s] = uint16(math.Ceil((float64(smry.SSum[s]) / float64(smry.SSum.Total())) * 100))
+	total := smry.SSum.Total()
+	for s, v := range smry.SSum {
+		smry.SMean[s] = v / smry.Count
+		if total > v {
+			smry.SPercent[s] = int(math.Floor((float64(v) / float64(total)) * 100))
+		} else {
+			fmt.Printf("total !> v: %d !> %d     (%v[%d])\n", total, v, smry.SSum, s)
+		}
 	}
 
 	// distance from the mean squared for stdev
-	var dsum uint16
-	var dsums BBsensor
+	var dsum int
+	var dsums BBevent
 	for _, d := range bbb.Data {
-		diff := d.Sensor.Total() - smry.Mean
+		diff := d.Data.Total() - smry.Mean
 		dsum += diff * diff
 
-		for s, _ := range d.Sensor {
-			sdiff := d.Sensor[s] - smry.SMean[s]
+		for s, _ := range d.Data {
+			sdiff := d.Data[s] - smry.SMean[s]
 			dsums[s] += sdiff * sdiff
 		}
 	}
 
 	// variance & stdev
 	smry.Variance = dsum / smry.Count
-	smry.Stdev = uint16(math.Ceil(math.Sqrt(float64(smry.Variance))))
+	smry.Stdev = int(math.Ceil(math.Sqrt(float64(smry.Variance))))
 	for s, _ := range dsums {
 		smry.SVariance[s] = dsums[s] / smry.Count
-		smry.SStdev[s] = uint16(math.Ceil(math.Sqrt(float64(smry.SVariance[s]))))
+		smry.SStdev[s] = int(math.Ceil(math.Sqrt(float64(smry.SVariance[s]))))
 	}
 
 	// percentiles
@@ -234,7 +240,7 @@ func (bbb *BBbucket) Summarize() (smry BBsummary) {
 	}
 
 	// fill in weight using the P50 value
-	smry.Weight = float64(smry.P50[0]+smry.P50[1]+smry.P50[2]+smry.P50[3]) * 2.2046226218
+	smry.Weight = int(math.Floor(float64(smry.P50[0]+smry.P50[1]+smry.P50[2]+smry.P50[3]) * 0.022046226218))
 
 	return smry
 }

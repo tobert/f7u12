@@ -32,10 +32,7 @@ import (
 	"unsafe"
 )
 
-const (
-	SENSOR_THRESHOLD uint16 = 30 // percent of total weight to determine sensor is chosen
-	THRESHOLD_COUNT         = 10 // number of readings in dir before recording it
-)
+const THRESHOLD_COUNT = 9 // number of readings in dir before recording it
 
 func main() {
 	fmt.Printf("Program started.\n")
@@ -91,10 +88,17 @@ func handle_device(dev string) {
 	// a ring buffer of sensor data
 	ring := NewBBbucket(10)
 
-	/* Poll the device and process every event it sends. Place events into ring and
-	 * check for thresholds on every pass. Once a pair of sensors cross SENSOR_THRESHOLD
-	 * percent of the total mass on the board for THRESHOLD_COUNT readings, record
-	 * the chosen direction */
+	// similar but only used for calibration
+	// my board is heavy on one corner, so any time the total mass drops below
+	// 300 grams, throw the values seen into this ring and grab the median to
+	// subtract from new values > 300 grams
+	calibration := NewBBbucket(100)
+	tear := calibration.Summarize()
+
+	// Poll the device and process every event it sends. Place events into ring and
+	// check for thresholds on every pass. Once a pair of sensors outweigh DIR_NONE
+	// percent of the total mass on the board for THRESHOLD_COUNT readings, record
+	// the chosen direction
 	for {
 		// poll the device
 		// will try again on the next pass if it returns EAGAIN,
@@ -112,34 +116,53 @@ func handle_device(dev string) {
 		case C.XWII_EVENT_BALANCE_BOARD:
 			// these values are already calibrated by the hid-wiimote kernel module
 			// see: https://github.com/torvalds/linux/blob/master/drivers/hid/hid-wiimote-modules.c#L1348
-			vals := BBsensor{}
-			vals[SENSOR_RF] = binary.LittleEndian.Uint16(ev.v[0:4])
-			vals[SENSOR_RR] = binary.LittleEndian.Uint16(ev.v[12:16])
-			vals[SENSOR_LF] = binary.LittleEndian.Uint16(ev.v[24:28])
-			vals[SENSOR_LR] = binary.LittleEndian.Uint16(ev.v[36:40])
+			vals := BBevent{}
+			vals[SENSOR_RF] = int(binary.LittleEndian.Uint16(ev.v[0:4]))
+			vals[SENSOR_RR] = int(binary.LittleEndian.Uint16(ev.v[12:16]))
+			vals[SENSOR_LF] = int(binary.LittleEndian.Uint16(ev.v[24:28]))
+			vals[SENSOR_LR] = int(binary.LittleEndian.Uint16(ev.v[36:40]))
 
 			bbd := BBdata{time.Now(), vals, DIR_NONE}
-			ring.Insert(&bbd)
+
+			// don't bother counting if the total pressure is too low (nobody on the board)
+			if vals.Total() < 300 {
+				calibration.Insert(&bbd)
+				tear = calibration.Summarize()
+				continue
+			} else {
+				// reduce values by the P50 of idle values
+				for i, v := range bbd.Data {
+					// make sure not to go negative (which wraps the value and ruins everything)
+					if v > tear.SMean[i] {
+						bbd.Data[i] = v - tear.SMean[i]
+					}
+				}
+				ring.Insert(&bbd)
+			}
 
 			smry := ring.Summarize()
 
-			if smry.Dist[SENSOR_RF] > SENSOR_THRESHOLD && smry.Dist[SENSOR_RR] > SENSOR_THRESHOLD {
-				bbd.Dir = DIR_RIGHT
-			} else if smry.Dist[SENSOR_LF] > SENSOR_THRESHOLD && smry.Dist[SENSOR_LR] > SENSOR_THRESHOLD {
-				bbd.Dir = DIR_LEFT
-			} else if smry.Dist[SENSOR_RF] > SENSOR_THRESHOLD && smry.Dist[SENSOR_LF] > SENSOR_THRESHOLD {
-				bbd.Dir = DIR_UP
-			} else if smry.Dist[SENSOR_RR] > SENSOR_THRESHOLD && smry.Dist[SENSOR_LR] > SENSOR_THRESHOLD {
-				bbd.Dir = DIR_DOWN
-			} else {
-				bbd.Dir = DIR_NONE
+			// determine the direction chosen by finding the maximum value of each corresponding
+			// sensor pair. Neutral position is preferred by dividing the sum of all 4 sensors
+			// by 3 instead of taking the mean (/4)
+			dirs := [5]int{}
+			dirs[DIR_UP] = smry.SPercent[SENSOR_RF] + smry.SPercent[SENSOR_LF]
+			dirs[DIR_DOWN] = smry.SPercent[SENSOR_RR] + smry.SPercent[SENSOR_LR]
+			dirs[DIR_LEFT] = smry.SPercent[SENSOR_LF] + smry.SPercent[SENSOR_LR]
+			dirs[DIR_RIGHT] = smry.SPercent[SENSOR_RF] + smry.SPercent[SENSOR_RR]
+			dirs[DIR_NONE] = (dirs[DIR_UP] + dirs[DIR_DOWN] + dirs[DIR_LEFT] + dirs[DIR_RIGHT]) / 3
+
+			for i, _ := range dirs {
+				if dirs[i] >= dirs[bbd.Dir] {
+					bbd.Dir = Dir(i)
+				}
 			}
 
 			// make the dir count accurate since direction is guessed after computing the summary
 			smry.Dirs[bbd.Dir] += 1
 
 			if smry.Dirs[bbd.Dir] > THRESHOLD_COUNT {
-				fmt.Printf("% 5s: % 8f, % 6d, rf(% 4d), rr(% 4d), lf(% 4d), lr(% 4d)\n", bbd.Dir, smry.Weight, smry.Stdev, smry.Dist[0], smry.Dist[1], smry.Dist[2], smry.Dist[3])
+				fmt.Printf("% 5s: % 4d, % 4d, rf(% 4d), rr(% 4d), lf(% 4d), lr(% 4d)\n", bbd.Dir, smry.Weight, smry.Stdev, smry.SPercent[0], smry.SPercent[1], smry.SPercent[2], smry.SPercent[3])
 				ring.Reset()
 			}
 		default:
