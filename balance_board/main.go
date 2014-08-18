@@ -26,6 +26,7 @@ import "C"
 
 import (
 	"encoding/binary"
+	//"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -83,6 +84,9 @@ func handle_device(dev string) {
 	// create an event struct, to pass into xwii_iface_poll()
 	var ev C.struct_xwii_event
 
+	// a ring buffer of sensor data
+	ring := NewBBbucket(10)
+
 	// might make sense to put a timer on this
 	for {
 		// poll the device
@@ -100,13 +104,28 @@ func handle_device(dev string) {
 		switch ev._type {
 		case C.XWII_EVENT_BALANCE_BOARD:
 			// convert the pressure sensor data to integers
-			a := binary.LittleEndian.Uint32(ev.v[0:4])   // right front
-			b := binary.LittleEndian.Uint32(ev.v[12:16]) // right rear
-			c := binary.LittleEndian.Uint32(ev.v[24:28]) // left front
-			d := binary.LittleEndian.Uint32(ev.v[36:40]) // left rear
+			rf := binary.LittleEndian.Uint32(ev.v[0:4])   // right front 0
+			rr := binary.LittleEndian.Uint32(ev.v[12:16]) // right rear  1
+			lf := binary.LittleEndian.Uint32(ev.v[24:28]) // left front  2
+			lr := binary.LittleEndian.Uint32(ev.v[36:40]) // left rear   3
 
-			// TODO: pass to a function that converts to direction
-			fmt.Printf("% 4d, % 4d, % 4d, % 4d, % 6d\n", a, b, c, d, (a + b + c + d))
+			bbd := BBdata{time.Now(), [4]uint32{rf, rr, lf, lr}, DIR_NONE}
+			ring.Insert(bbd)
+
+			smry := ring.Summarize()
+
+			thresh := uint32(30)
+			if smry.Dist[0] > thresh && smry.Dist[1] > thresh { // RF & RR
+				bbd.Dir = DIR_RIGHT
+			} else if smry.Dist[2] > thresh && smry.Dist[3] > thresh { // LF & LR
+				bbd.Dir = DIR_LEFT
+			} else if smry.Dist[0] > thresh && smry.Dist[2] > thresh { // RF & LF
+				bbd.Dir = DIR_UP
+			} else if smry.Dist[1] > thresh && smry.Dist[3] > thresh { // RR & LR
+				bbd.Dir = DIR_DOWN
+			}
+
+			fmt.Printf("% 5s (% 2d): % 6d, % 6d, rf(% 4d), rr(% 4d), lf(% 4d), lr(% 4d)\n", bbd.Dir, smry.Dirs[bbd.Dir], smry.Sum, smry.Stdev, smry.Dist[0], smry.Dist[1], smry.Dist[2], smry.Dist[3])
 		default:
 			log.Printf("Unrecognized event type: %d\n", int(ev._type))
 		}
