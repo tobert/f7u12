@@ -49,4 +49,32 @@ CREATE TABLE avg_score_by_turn (
     PRIMARY KEY((name,turn_id), avg_score)
 );
 
+CREATE TABLE balance_board_input (
+    bucket      timestamp,
+    mac         text,
+    ts          timestamp,
+    count       int,
+    period      int,
+    weight      int,
+    min         int,
+    max         int,
+    sum         int,
+    mean        int,
+    variance    int,
+    stdev       int,
+    rf_pcnt     int,
+    rr_pcnt     int,
+    lf_pcnt     int,
+    lr_pcnt     int,
+    rf_mean     int,
+    rr_mean     int,
+    lf_mean     int,
+    lr_mean     int,
+    rf_stdev    int,
+    rr_stdev    int,
+    lf_stdev    int,
+    lr_stdev    int,
+    PRIMARY KEY((bucket,mac), ts)
+);
+
 // vim: et ts=4 sw=4 ai smarttab

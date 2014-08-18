@@ -26,6 +26,7 @@ import "C"
 
 import (
 	"encoding/binary"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -33,12 +34,34 @@ import (
 	"strings"
 	"time"
 	"unsafe"
+
+	"github.com/gocql/gocql"
 )
 
 const THRESHOLD_COUNT = 9 // number of readings in dir before recording it
 
+var cqlFlag, ksFlag string
+
+func init() {
+	flag.StringVar(&cqlFlag, "cql", "127.0.0.1", "IP or IP:port of the Cassandra CQL service")
+	flag.StringVar(&ksFlag, "ks", "f7u12", "keyspace containing the f7u12 schema")
+}
+
 func main() {
-	fmt.Printf("Program started.\n")
+	flag.Parse()
+
+	fmt.Printf("Connecting to Cassandra...\n")
+
+	cluster := gocql.NewCluster(cqlFlag)
+	cluster.Keyspace = ksFlag
+	cluster.Consistency = gocql.One
+	cass, err := cluster.CreateSession()
+	if err != nil {
+		panic(fmt.Sprintf("Error creating Cassandra session: %v", err))
+	}
+	defer cass.Close()
+
+	fmt.Printf("Watching for Wii devices...\n")
 
 	// the xwii monitor watches udev for new devices
 	xmon := C.xwii_monitor_new(true, false)
@@ -58,12 +81,12 @@ func main() {
 		if gdev != "" {
 			// kick off a goroutine for each device even though
 			// there is usually just one
-			go handle_device(gdev)
+			go handle_device(gdev, cass)
 		}
 	}
 }
 
-func handle_device(dev string) {
+func handle_device(dev string, cass *gocql.Session) {
 	// get the Bluetooth MAC address of the device
 	mac_bytes, err := ioutil.ReadFile(path.Join(dev, "..", "address"))
 	if err != nil {
@@ -175,6 +198,11 @@ func handle_device(dev string) {
 			smry.MacAddress = mac
 
 			if smry.Dirs[bbd.Dir] > THRESHOLD_COUNT {
+				err = smry.SaveToCassandra(cass)
+				if err != nil {
+					log.Printf("Failed to write to Cassandra: %s\n", err)
+				}
+
 				fmt.Printf("% 5s: % 4d, % 4d, rf(% 4d), rr(% 4d), lf(% 4d), lr(% 4d)\n", bbd.Dir, smry.Weight, smry.Stdev, smry.SPercent[0], smry.SPercent[1], smry.SPercent[2], smry.SPercent[3])
 				ring.Reset()
 			}
