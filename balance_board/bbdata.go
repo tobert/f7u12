@@ -195,10 +195,8 @@ func (bbb *BBbucket) Summarize() (smry BBsummary) {
 	total := smry.SSum.Total()
 	for s, v := range smry.SSum {
 		smry.SMean[s] = v / smry.Count
-		if total > v {
+		if total >= v {
 			smry.SPercent[s] = int(math.Floor((float64(v) / float64(total)) * 100))
-		} else {
-			fmt.Printf("total !> v: %d !> %d     (%v[%d])\n", total, v, smry.SSum, s)
 		}
 	}
 

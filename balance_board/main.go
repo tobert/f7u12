@@ -93,7 +93,7 @@ func handle_device(dev string) {
 	// 300 grams, throw the values seen into this ring and grab the median to
 	// subtract from new values > 300 grams
 	calibration := NewBBbucket(100)
-	tear := calibration.Summarize()
+	offsets := calibration.Summarize()
 
 	// Poll the device and process every event it sends. Place events into ring and
 	// check for thresholds on every pass. Once a pair of sensors outweigh DIR_NONE
@@ -127,14 +127,14 @@ func handle_device(dev string) {
 			// don't bother counting if the total pressure is too low (nobody on the board)
 			if vals.Total() < 300 {
 				calibration.Insert(&bbd)
-				tear = calibration.Summarize()
+				offsets = calibration.Summarize()
 				continue
 			} else {
 				// reduce values by the P50 of idle values
 				for i, v := range bbd.Data {
 					// make sure not to go negative (which wraps the value and ruins everything)
-					if v > tear.SMean[i] {
-						bbd.Data[i] = v - tear.SMean[i]
+					if v > offsets.SMean[i] {
+						bbd.Data[i] = v - offsets.SMean[i]
 					}
 				}
 				ring.Insert(&bbd)
