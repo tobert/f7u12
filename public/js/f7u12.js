@@ -110,7 +110,7 @@ F7U12.prototype.render = function (target) {
     .enter()
     .append("div")
       .attr("class", F7U12.cell_class)
-      .attr("data-id", function (d,i) { return i; })
+      .attr("id", function (d,i) { return "cell-" + i; })
       .attr("style", function (d,i) {
          if (i % game.width == 0) { return "clear: both;" }
       })
