@@ -81,17 +81,11 @@ $(function() {
     game.last_turn = performance.now();
   };
 
-  var gradient = [
-    "#3EFF09", "#0BFD11", "#0CFC4B", "#0EFA84", "#0FF9BC", "#10F7F2", "#11C5F6", "#138EF5", "#1459F3", "#1525F2",
-    "#3B16F0", "#6F18EF", "#A119ED", "#D31AEC", "#EB1BD2", "#E91CA0", "#E81D6F", "#E61E40", "#E52D1F", "#E45C21"
-  ];
-
   // color the whole game div background by pressure with a gradient
   var colorize = function (game, bb) {
     var gx = 355 - Math.floor(355 * ((bb.lf_pcnt + bb.lr_pcnt)/100));
     var gy = 355 - Math.floor(355 * ((bb.lf_pcnt + bb.rf_pcnt)/100));
     d3.select(game.target + " .f7u12-grid").style("background", "radial-gradient(ellipse farthest-corner at " + gx + "px " + gy + "px , #ff3e00 5%, #ffff4b 50%, #3eff09 95%)");
-    ff3e00
   };
 
   var game1 = new F7U12(4);
