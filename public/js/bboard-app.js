@@ -27,6 +27,8 @@ $(function() {
       d3.json("/counts", function (data) { DATA.counts = data; split_counts(data); });
       d3.json("/top_games/human_topN", function (data) { DATA.human_topn = data; });
       d3.json("/top_games/ai_topN", function (data) { DATA.ai_topn = data; });
+      d3.json("/recent", function (data) { DATA.recent_games = data; });
+      d3.json("/avg_score_by_turn", function (data) { DATA.avg_score_by_turn = data; });
   };
   DATA.update();
 
@@ -48,6 +50,15 @@ $(function() {
   DATA.timer = $.timer(DATA.update, 1000, true);
   WIDGETS.timer = $.timer(WIDGETS.update, 200, true);
 
+  var get_avg_score = function (turn) {
+    return DATA.avg_score_by_turn.filter(function (v) {
+      if (v.name === "human" && turn_id === turn) {
+        return true;
+      }
+      return false;
+    })[0];
+  };
+
   var move = function (game, dir) {
     var changed = game.move(dir);
     if (!changed) {
@@ -62,10 +73,10 @@ $(function() {
       data: game.serialize(),
       success: function () { console.log("XHR Succeeded."); }
     });
-         //<span>Average: </span><span id="game1-avg-score">0</span>
 
     d3.select(game.target + "-score").text(game.score);
     d3.select(game.target + "-turn-id").text(game.sequence);
+    d3.select(game.target + "-avg-score").text(get_avg_score(game.sequence));
 
     game.last_turn = performance.now();
   };
@@ -75,8 +86,6 @@ $(function() {
     "#3B16F0", "#6F18EF", "#A119ED", "#D31AEC", "#EB1BD2", "#E91CA0", "#E81D6F", "#E61E40", "#E52D1F", "#E45C21"
   ];
 
-  // {lf,lr,rf,rr}_pcnt
-  // var pcnt = [bb.lf_pcnt, bb.rf_pcnt, bb.lr_pcnt, bb.rr_pcnt];
   var colorize = function (game, bb) {
     var scale = d3.scale.linear()
       .domain([0, 100])
@@ -114,9 +123,19 @@ $(function() {
   game3.init(2);
   game3.target = "#game3";
   game3.render(game3.target);
+  game3.dash_update = function () {
+    try {
+      var id = DATA.recent_games.filter(function (d) { return d.player == "AI"; })[0];
+      d3.json("/game/" + (id.game_id || "id-missing"), function (data) {
+        game3.cells = data[data.length - 1].state;
+        game3.update();
+      });
+    }
+    catch (e) { console.log("Exception: ", e); }
+  };
+  WIDGETS.game3 = game3;
 
   var stream_bboard = function (game) {
-    console.log(game);
     var sock = new WebSocket("ws://" + window.location.host + "/balance_board/" + game.name);
     sock.onerror = function (e) { console.log("socket error", e); };
     sock.onopen = function (e) {
@@ -125,8 +144,8 @@ $(function() {
         // direction may be 'none', unsupported by f7u12
         if (bb.direction == "up" || bb.direction == "down" || bb.direction == "left" || bb.direction == "right") {
           move(game, bb.direction);
-          colorize(game, bb);
         }
+        colorize(game, bb);
       };
     };
   };
