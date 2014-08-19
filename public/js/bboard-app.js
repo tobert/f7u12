@@ -62,6 +62,10 @@ $(function() {
       data: game.serialize(),
       success: function () { console.log("XHR Succeeded."); }
     });
+         //<span>Average: </span><span id="game1-avg-score">0</span>
+
+    d3.select(game.target + "-score").text(game.score);
+    d3.select(game.target + "-turn-id").text(game.sequence);
 
     game.last_turn = performance.now();
   };
@@ -70,17 +74,22 @@ $(function() {
   game1.name = "00:24:44:dc:0b:25";
   game1.uuid = UUIDjs.create(1).toString();
   game1.init(2);
-  game1.render("#grid1");
+  game1.target = "#game1";
+  game1.render(game1.target);
 
   var game2 = new F7U12(4);
   game2.name = "00:24:44:dc:0b:25"; // TODO: change to other balance board
   game2.uuid = UUIDjs.create(1).toString();
   game2.init(2);
-  game2.render("#grid2");
+  game2.target = "#game2";
+  game2.render(game2.target);
 
   game3 = new F7U12(4);
   game3.name = "AI";
-  game3.render("#grid3");
+  game3.uuid = UUIDjs.create(1).toString();
+  game3.init(2);
+  game3.target = "#game3";
+  game3.render(game3.target);
 
   var stream_bboard = function (game) {
     console.log(game);
