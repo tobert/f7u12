@@ -23,8 +23,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/gocql/gocql"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
 type BBdata struct {
@@ -91,8 +92,10 @@ LIMIT 1
 				&bbd.RFmean, &bbd.RRmean, &bbd.LFmean, &bbd.LRmean,
 				&bbd.RFstdev, &bbd.RRstdev, &bbd.LFstdev, &bbd.LRstdev,
 			)
-			// plenty of errors on no data in current bucket, ignore for now
-			// TODO: check error type and log on errors other than NotFound
+			// ignore ErrNotFound, it's expected frequently
+			if err != nil && err != gocql.ErrNotFound {
+				log.Printf("Error reading BBdata from Cassandra: %s\n", err)
+			}
 
 			// don't send on the websocket if it's the same read as last time around
 			if bbd.Timestamp == prev {
