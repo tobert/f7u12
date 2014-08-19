@@ -21,6 +21,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gocql/gocql"
@@ -57,7 +58,8 @@ type BBdata struct {
 
 func BBoardHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	mac := vars["mac"]
+	mac := strings.ToLower(vars["mac"])
+	log.Printf("New Mac request: %s\n", mac)
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {

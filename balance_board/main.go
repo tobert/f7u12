@@ -196,7 +196,7 @@ func handle_device(dev string, cass *gocql.Session) {
 			// make the dir count accurate since direction is guessed after computing the summary
 			smry.Dirs[bbd.Dir] += 1
 			// add the MAC address to the summary struct
-			smry.MacAddress = mac
+			smry.MacAddress = strings.ToLower(mac)
 
 			if smry.Dirs[bbd.Dir] > THRESHOLD_COUNT {
 				err = smry.SaveToCassandra(cass, bbd.Dir.String())
