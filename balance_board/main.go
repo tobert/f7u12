@@ -38,7 +38,7 @@ import (
 	"github.com/gocql/gocql"
 )
 
-const THRESHOLD_COUNT = 9 // number of readings in dir before recording it
+const THRESHOLD_COUNT = 10 // number of readings in dir before recording it
 
 var cqlFlag, ksFlag string
 
@@ -120,7 +120,7 @@ func handle_device(dev string, cass *gocql.Session) {
 	var ev C.struct_xwii_event
 
 	// a ring buffer of sensor data
-	ring := NewBBbucket(10)
+	ring := NewBBbucket(20)
 
 	// similar but only used for calibration
 	// my board is heavy on one corner, so any time the total mass drops below
