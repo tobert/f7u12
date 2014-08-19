@@ -164,7 +164,7 @@ func (bbb *BBbucket) Summarize() (smry BBsummary) {
 		smry.Sum += total
 		smry.Count += 1
 		smry.Last = d
-		smry.Timestamp = smry.Last.TS
+		smry.Timestamp = time.Now()
 
 		// counts by direction detected
 		smry.Dirs[d.Dir] += 1
