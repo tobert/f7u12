@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>2048: The Dashboard</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="@AlTobey">
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/f7u12.css" />
+    <link rel="stylesheet" href="css/bboard.css" />
+</head>
+
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-4" id="human_topN_leaderboard"></div>
+      <div class="col-sm-4">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-sm-6">
+              <h1 id="human_games">0</h1><h6>Human Games</h6>
+            </div>
+            <div class="col-sm-6">
+              <h1 id="ai_games">0</h1><h6>AI Games</h6>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-sm-6">
+              <h2 id="human_moves">0</h2><h6>Human Moves</h6>
+            </div>
+            <div class="col-sm-6">
+              <h2 id="ai_moves">0</h2><h6>AI Moves</h6>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-4" id="ai_topN_leaderboard"></div>
+    </div>
+    <div class="row">
+      <div class="col-sm-6" id="graph1"></div>
+      <div class="col-sm-6" id="graph2"></div>
+    </div>
+    <div class="row">
+      <div class="col-sm-4" id="grid1"></div>
+      <div class="col-sm-4" id="grid2"></div>
+      <div class="col-sm-4" id="grid3"></div>
+    </div>
+  </div>
+
+  <script src="js/jquery-2.1.1.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/jquery.touchSwipe.min.js"></script>
+  <script src="js/performance-now-polyfill.js"></script>
+  <script src="js/jquery.timer.js"></script>
+  <script src="js/d3.v3.min.js"></script>
+  <script src="js/dimple.v2.0.2.js"></script>
+  <script src="js/f7u12.js"></script>
+  <script src="js/dpad.js"></script>
+  <script src="js/uuid.js"></script>
+  <script src="js/f7u12-dashboard.js"></script>
+  <script src="js/bboard-app.js"></script>
+</body>
+</html>
+
+<!-- vim: et ts=2 sw=2 ai smarttab
+-->
