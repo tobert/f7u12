@@ -86,32 +86,23 @@ $(function() {
     "#3B16F0", "#6F18EF", "#A119ED", "#D31AEC", "#EB1BD2", "#E91CA0", "#E81D6F", "#E61E40", "#E52D1F", "#E45C21"
   ];
 
+  // color the whole game div background by pressure with a gradient
   var colorize = function (game, bb) {
-    var scale = d3.scale.linear()
-      .domain([0, 100])
-      .rangeRound([0, gradient.length-1]);
-
-    var lf = gradient[scale(bb.lf_pcnt)];
-    var rf = gradient[scale(bb.rf_pcnt)];
-    var lr = gradient[scale(bb.lr_pcnt)];
-    var rr = gradient[scale(bb.rr_pcnt)];
-
-    [ 0,  1,  4,  5].forEach(function (i) { d3.select("#cell-" + i).style("background-color", lf) });
-    [ 2,  3,  6,  7].forEach(function (i) { d3.select("#cell-" + i).style("background-color", rf) });
-    [ 8,  9, 12, 13].forEach(function (i) { d3.select("#cell-" + i).style("background-color", lr) });
-    [10, 11, 14, 15].forEach(function (i) { d3.select("#cell-" + i).style("background-color", rr) });
-
+    var gx = 355 - Math.floor(355 * ((bb.lf_pcnt + bb.lr_pcnt)/100));
+    var gy = 355 - Math.floor(355 * ((bb.lf_pcnt + bb.rf_pcnt)/100));
+    d3.select(game.target + " .f7u12-grid").style("background", "radial-gradient(ellipse farthest-corner at " + gx + "px " + gy + "px , #ff3e00 5%, #ffff4b 50%, #3eff09 95%)");
+    ff3e00
   };
 
   var game1 = new F7U12(4);
-  game1.name = "00:24:44:dc:0b:25";
+  game1.name = "00:24:44:dc:0b:25"; // Al's balance board
   game1.uuid = UUIDjs.create(1).toString();
   game1.init(2);
   game1.target = "#game1";
   game1.render(game1.target);
 
   var game2 = new F7U12(4);
-  game2.name = "00:24:44:dc:0b:25"; // TODO: change to other balance board
+  game2.name = "00:24:44:EE:56:A2"; // Patrick's balance board
   game2.uuid = UUIDjs.create(1).toString();
   game2.init(2);
   game2.target = "#game2";
