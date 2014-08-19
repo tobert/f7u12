@@ -53,6 +53,7 @@ CREATE TABLE balance_board_input (
     bucket      timestamp,
     mac         text,
     ts          timestamp,
+    direction   text,
     count       int,
     period      int,
     weight      int,

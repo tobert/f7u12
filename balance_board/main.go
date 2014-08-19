@@ -133,7 +133,8 @@ func handle_device(dev string, cass *gocql.Session) {
 	// check for thresholds on every pass. Once a pair of sensors outweigh DIR_NONE
 	// percent of the total mass on the board for THRESHOLD_COUNT readings, record
 	// the chosen direction
-	for {
+	ticker := time.NewTicker(time.Millisecond)
+	for now := range ticker.C {
 		// poll the device
 		// will try again on the next pass if it returns EAGAIN,
 		// break & return on any other errors
@@ -156,7 +157,7 @@ func handle_device(dev string, cass *gocql.Session) {
 			vals[SENSOR_LF] = int(binary.LittleEndian.Uint16(ev.v[24:28]))
 			vals[SENSOR_LR] = int(binary.LittleEndian.Uint16(ev.v[36:40]))
 
-			bbd := BBdata{time.Now(), vals, DIR_NONE}
+			bbd := BBdata{now, vals, DIR_NONE}
 
 			// don't bother counting if the total pressure is too low (nobody on the board)
 			if vals.Total() < 300 {
@@ -198,7 +199,7 @@ func handle_device(dev string, cass *gocql.Session) {
 			smry.MacAddress = mac
 
 			if smry.Dirs[bbd.Dir] > THRESHOLD_COUNT {
-				err = smry.SaveToCassandra(cass)
+				err = smry.SaveToCassandra(cass, bbd.Dir.String())
 				if err != nil {
 					log.Printf("Failed to write to Cassandra: %s\n", err)
 				}

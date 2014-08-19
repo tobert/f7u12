@@ -22,21 +22,21 @@ import (
 	"github.com/gocql/gocql"
 )
 
-func (smry *BBsummary) SaveToCassandra(cass *gocql.Session) error {
+func (smry *BBsummary) SaveToCassandra(cass *gocql.Session, direction string) error {
 	query := `
 INSERT INTO balance_board_input
-(bucket, mac, ts,
+(bucket, mac, ts, direction,
  count, period, weight, min, max, sum, mean, variance, stdev,
  rf_pcnt, rr_pcnt, lf_pcnt, lr_pcnt,
  rf_mean, rr_mean, lf_mean, lr_mean,
  rf_stdev, rr_stdev, lf_stdev, lr_stdev
-) VALUES (?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?, ?,?,?,?, ?,?,?,?)
+) VALUES (?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?, ?,?,?,?, ?,?,?,?)
 `
 
 	bucket := smry.Timestamp.Truncate(time.Minute)
 
 	return cass.Query(query,
-		bucket, smry.MacAddress, smry.Timestamp,
+		bucket, smry.MacAddress, smry.Timestamp, direction,
 		smry.Count, smry.Period, smry.Weight, smry.Min, smry.Max, smry.Sum, smry.Mean, smry.Variance, smry.Stdev,
 		smry.SPercent[SENSOR_RF], smry.SPercent[SENSOR_RR], smry.SPercent[SENSOR_LF], smry.SPercent[SENSOR_LR],
 		smry.SMean[SENSOR_RF], smry.SMean[SENSOR_RR], smry.SMean[SENSOR_LF], smry.SMean[SENSOR_LR],
