@@ -8,7 +8,8 @@
 spark/target/
 spark/lib_managed/
 spark/src_managed/
-spark/project/
+spark/project/project
+spark/project/target
 spark/.idea/
 spark/src/target/
 
