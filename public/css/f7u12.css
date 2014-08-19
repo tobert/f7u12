@@ -31,12 +31,12 @@ div.f7u12-cell {
     border-radius: 3px;
 }
 
+/* TODO: update these to be unique over a gradient */
 div.f7u12-cell-empty {
     background-color: #f2f5f6;
     background-image: linear-gradient(to bottom, #f2f5f6, #c8d7dc);
 }
 
-/* TODO: update these to be unique over a gradient */
 div.f7u12-cell-2 {
     background-color: #f2f5f6;
     background-image: linear-gradient(to bottom, #f2f5f6, #c8d7dc);
