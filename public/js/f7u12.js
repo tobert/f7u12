@@ -129,7 +129,7 @@ F7U12.prototype.update = function () {
   if (game.visible) {
     game.cell_divs
       .data(game.cells)
-      .attr("classed", F7U12.cell_class)
+      .attr("class", F7U12.cell_class)
       .text(F7U12.print);
   }
 };
