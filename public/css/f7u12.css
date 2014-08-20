@@ -8,6 +8,8 @@ div.f7u12-score {
 
 div.f7u12-grid {
     display: inline-block;
+	min-width: 444px;
+	min-height: 444px;
     margin: 10px;
     padding: 10px;
     box-shadow: 3px 3px 5px #888888;
@@ -18,10 +20,10 @@ div.f7u12-grid {
 
 div.f7u12-cell {
     display: inline-block;
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     float: left;
-    line-height: 80px;
+    line-height: 100px;
     font-size: 40px;
     text-align: center;
     text-decoration: none;

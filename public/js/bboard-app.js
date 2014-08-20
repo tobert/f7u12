@@ -18,6 +18,7 @@
 $(function() {
   // must be lower case
   var bboards = ["00:24:44:dc:0b:25", "00:24:44:ee:56:a2"];
+  var width_px = 445; // width of the grid in pixels (TODO: query the DOM instead)
 
   // there are two timers, one fires XHRs to update data stored in DATA
   // the other updates content on the page using data in DATA
@@ -87,8 +88,8 @@ $(function() {
   var colorize = function (game, bb) {
     // draw a radial gradient as the background of the f7u12 game div
     // that follows where the center of pressure is on the balance board
-    var gx = 355 - Math.floor(355 * ((bb.lf_pcnt + bb.lr_pcnt)/100));
-    var gy = 355 - Math.floor(355 * ((bb.lf_pcnt + bb.rf_pcnt)/100));
+    var gx = width_px - Math.floor(width_px * ((bb.lf_pcnt + bb.lr_pcnt)/100));
+    var gy = width_px - Math.floor(width_px * ((bb.lf_pcnt + bb.rf_pcnt)/100));
     d3.select(game.target + " .f7u12-grid")
       .style("background", "radial-gradient(ellipse farthest-corner at " + gx + "px " + gy + "px , #ff0000 1%, #fafa00 50%, #4efa00 99%)");
   };
