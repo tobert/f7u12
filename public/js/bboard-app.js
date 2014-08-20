@@ -16,6 +16,9 @@
 
 // one-time setup, creating elements, etc.
 $(function() {
+  // must be lower case
+  var bboards = ["00:24:44:dc:0b:25", "00:24:44:ee:56:a2"];
+
   // there are two timers, one fires XHRs to update data stored in DATA
   // the other updates content on the page using data in DATA
   // These will be out of sync a little but it should be no big deal
@@ -26,7 +29,6 @@ $(function() {
   DATA.update = function () {
       d3.json("/counts", function (data) { DATA.counts = data; split_counts(data); });
       d3.json("/top_games/human_topN", function (data) { DATA.human_topn = data; });
-      d3.json("/top_games/ai_topN", function (data) { DATA.ai_topn = data; });
       d3.json("/recent", function (data) { DATA.recent_games = data; });
       d3.json("/avg_score_by_turn", function (data) { DATA.avg_score_by_turn = data; });
   };
@@ -52,11 +54,11 @@ $(function() {
 
   var get_avg_score = function (turn) {
     return DATA.avg_score_by_turn.filter(function (v) {
-      if (v.name === "human" && turn_id === turn) {
+      if (v.name === "human" && v.turn_id === turn) {
         return true;
       }
       return false;
-    })[0];
+    })[0].avg_score;
   };
 
   var move = function (game, dir) {
@@ -83,40 +85,33 @@ $(function() {
 
   // color the whole game div background by pressure with a gradient
   var colorize = function (game, bb) {
-    // the backend can send zeroed messages if no recent rows are in Cassandra
-    // in that case, the board is probably idle, so assume even distribution
-    if (bb.direction === "") {
-      bb.lf_pcnt = 25;
-      bb.rf_pcnt = 25;
-      bb.lr_pcnt = 25;
-      bb.rr_pcnt = 25;
-    }
-
+    // draw a radial gradient as the background of the f7u12 game div
+    // that follows where the center of pressure is on the balance board
     var gx = 355 - Math.floor(355 * ((bb.lf_pcnt + bb.lr_pcnt)/100));
     var gy = 355 - Math.floor(355 * ((bb.lf_pcnt + bb.rf_pcnt)/100));
     d3.select(game.target + " .f7u12-grid")
-      .style("background", "radial-gradient(ellipse farthest-corner at " + gx + "px " + gy + "px , #ff3e00 1%, #ffff4b 50%, #3eff09 99%)");
+      .style("background", "radial-gradient(ellipse farthest-corner at " + gx + "px " + gy + "px , #ff0000 1%, #fafa00 50%, #4efa00 99%)");
   };
 
   var game1 = new F7U12(4);
-  game1.name = "00:24:44:dc:0b:25"; // Al's balance board
+  game1.name = bboards[0];
   game1.uuid = UUIDjs.create(1).toString();
   game1.init(2);
   game1.target = "#game1";
   game1.render(game1.target);
 
   var game2 = new F7U12(4);
-  game2.name = "00:24:44:EE:56:A2"; // Patrick's balance board
+  game2.name = bboards[1];
   game2.uuid = UUIDjs.create(1).toString();
   game2.init(2);
-  game2.target = "#game2";
+  game2.target = "#game3";
   game2.render(game2.target);
 
   game3 = new F7U12(4);
   game3.name = "AI";
   game3.uuid = UUIDjs.create(1).toString();
   game3.init(2);
-  game3.target = "#game3";
+  game3.target = "#game2";
   game3.render(game3.target);
   game3.dash_update = function () {
     try {
@@ -130,17 +125,101 @@ $(function() {
   };
   WIDGETS.game3 = game3;
 
+  var update_pressure_line = (function () {
+    var now = Date.now();
+    var target = "#pressure-svg";
+    var entries = 100;
+    var initdata = d3.range(entries).map(function () { return 0; });
+    var margin = {top: 20, right: 80, bottom: 30, left: 50};
+    var width = 600 - margin.left - margin.right;
+    var height = 300 - margin.top - margin.bottom;
+
+    var x = d3.scale.linear().domain([0,entries]).range([0, width]); // only use index for x
+    var y = d3.scale.linear().domain([0,100]).range([height, 0]); // percentage
+    var xaxis = d3.svg.axis().scale(x).orient("bottom");
+    var yaxis = d3.svg.axis().scale(y).orient("left");
+
+    var tline = d3.svg.line().interpolate("basis")
+      .x(function (d,i) { return x(i); })
+      .y(function (d,i) { return y(d); });
+
+    var bline = d3.svg.line()
+      .x(function (d,i) { return x(i); })
+      .y(function (d,i) { return y(100 - d); })
+      .interpolate("basis");
+
+    var svg = d3.select(target).append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.append("g").attr("class", "x axis").attr("transform", "translate(0," + height + ")").call(xaxis);
+    svg.append("g").attr("class", "y axis").call(yaxis);
+
+    var colors = d3.scale.category10();
+
+    // might be able to build this with d3 selections too ... another day
+    var lines = {};
+    lines[bboards[0]] = {
+      dfun: bline,
+      lf_pcnt: svg.append("g").append("path").datum(initdata).attr("class", "line").attr("d", bline).attr("stroke", colors(0)),
+      rf_pcnt: svg.append("g").append("path").datum(initdata).attr("class", "line").attr("d", bline).attr("stroke", colors(1)),
+      lr_pcnt: svg.append("g").append("path").datum(initdata).attr("class", "line").attr("d", bline).attr("stroke", colors(2)),
+      rr_pcnt: svg.append("g").append("path").datum(initdata).attr("class", "line").attr("d", bline).attr("stroke", colors(3))
+    };
+    lines[bboards[1]] = {
+      dfun: tline,
+      lf_pcnt: svg.append("g").append("path").datum(initdata).attr("class", "line").attr("d", tline).attr("stroke", colors(4)),
+      rf_pcnt: svg.append("g").append("path").datum(initdata).attr("class", "line").attr("d", tline).attr("stroke", colors(5)),
+      lr_pcnt: svg.append("g").append("path").datum(initdata).attr("class", "line").attr("d", tline).attr("stroke", colors(6)),
+      rr_pcnt: svg.append("g").append("path").datum(initdata).attr("class", "line").attr("d", tline).attr("stroke", colors(7))
+    };
+
+    // return a function that can be called on websocket events to update the lines
+    // by mac & sensor
+    return function (bb) {
+      if (!lines.hasOwnProperty(bb.mac_address)) {
+        console.log("Unrecognized MAC address: ", bb.mac_address, bb);
+        return;
+      }
+
+      ["lf_pcnt", "rf_pcnt", "lr_pcnt", "rr_pcnt"].forEach(function (key) {
+        var board = lines[bb.mac_address];
+        var line = board[key];
+        var data = line.datum();
+            data.shift();
+            data.push(bb[key]);
+        line.datum(data).attr("d", board.dfun);
+      });
+    };
+  }());
+
   var stream_bboard = function (game) {
     var sock = new WebSocket("ws://" + window.location.host + "/balance_board/" + game.name);
     sock.onerror = function (e) { console.log("socket error", e); };
     sock.onopen = function (e) {
       sock.onmessage = function(msg) {
         var bb = JSON.parse(msg.data);
+        bb.timestamp = Date.parse(bb.timestamp);
+
+        // the backend can send zeroed messages if no recent rows are in Cassandra
+        // in that case, the board is probably idle, so assume even distribution
+        if (bb.direction === "") {
+          bb.lf_pcnt = 25;
+          bb.rf_pcnt = 25;
+          bb.lr_pcnt = 25;
+          bb.rr_pcnt = 25;
+        }
+
         // direction may be 'none', unsupported by f7u12
         if (bb.direction == "up" || bb.direction == "down" || bb.direction == "left" || bb.direction == "right") {
           move(game, bb.direction);
         }
+
         colorize(game, bb);
+
+        update_pressure_line(bb);
       };
     };
   };
@@ -155,15 +234,6 @@ $(function() {
     WIDGETS.human_leaderboard.render(DATA.human_topn);
     WIDGETS.human_leaderboard.dash_update = function () {
       WIDGETS.human_leaderboard.update(DATA.human_topn);
-    };
-  });
-
-  d3.json("/top_games/ai_topN", function (data) {
-    DATA.ai_topn = data;
-    WIDGETS.ai_leaderboard = new F7U12.Leaderboard("#ai_topN_leaderboard", "AI Top 10");
-    WIDGETS.ai_leaderboard.render(data);
-    WIDGETS.ai_leaderboard.dash_update = function () {
-      WIDGETS.ai_leaderboard.update(DATA.ai_topn);
     };
   });
 
@@ -221,4 +291,5 @@ $(function() {
     WIDGETS.bignums.dash_update();
   });
 });
+
 // vim: et ts=2 sw=2 ai smarttab
