@@ -83,9 +83,19 @@ $(function() {
 
   // color the whole game div background by pressure with a gradient
   var colorize = function (game, bb) {
+    // the backend can send zeroed messages if no recent rows are in Cassandra
+    // in that case, the board is probably idle, so assume even distribution
+    if (bb.direction === "") {
+      bb.lf_pcnt = 25;
+      bb.rf_pcnt = 25;
+      bb.lr_pcnt = 25;
+      bb.rr_pcnt = 25;
+    }
+
     var gx = 355 - Math.floor(355 * ((bb.lf_pcnt + bb.lr_pcnt)/100));
     var gy = 355 - Math.floor(355 * ((bb.lf_pcnt + bb.rf_pcnt)/100));
-    d3.select(game.target + " .f7u12-grid").style("background", "radial-gradient(ellipse farthest-corner at " + gx + "px " + gy + "px , #ff3e00 5%, #ffff4b 50%, #3eff09 95%)");
+    d3.select(game.target + " .f7u12-grid")
+      .style("background", "radial-gradient(ellipse farthest-corner at " + gx + "px " + gy + "px , #ff3e00 1%, #ffff4b 50%, #3eff09 99%)");
   };
 
   var game1 = new F7U12(4);
