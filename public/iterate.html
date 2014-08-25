@@ -21,8 +21,16 @@
         <div class="col-sm-2" id="count">
         </div>
         <div class="col-sm-8">
-          <div id="player1-container"></div>
+          <div id="player1-container" style="min-height: 500px;"></div>
         </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-sm-12">
+        <a href="/index.html">Vanilla 2048</a> |
+        <a href="/iterate.html">2048 with simple solver</a> |
+        <a href="/eval-ai.html">2048 with simple solver in editor</a>
       </div>
     </div>
 
@@ -45,8 +53,8 @@
         d3.select("#player1-container").selectAll("div").remove();
         game.render("#player1-container");
         i++;
-        d3.select("#count").text(i);
-      }, 5000, true);
+        d3.select("#count").text("Games played: " + i);
+      }, 1000, true);
 
       timer.pause();
 
