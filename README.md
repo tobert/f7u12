@@ -36,6 +36,15 @@ and referenced locally because conference networks are unreliable.
 
 The Spark job needs Cassandra running and does not contact the Go app.
 
+Docker
+======
+
+The Dockerfile included in this repo uses scratch as the base. The
+f7u12 app needs to be built statically to work without libc.
+
+Build with CGO\_ENABLED=0 to make sure you get a static binary.
+`CGO_ENABLED=0 go build -a`
+
 Components
 ==========
 
