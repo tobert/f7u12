@@ -22,17 +22,10 @@ $(function() {
     }
 
     var new_tile_idx = game.insert();
-    $.ajax({
-      url: "/grid",
-      type: "PUT",
-      dataType: "json",
-      data: game.serialize(),
-      success: function () { console.log("XHR Succeeded."); }
-    });
+
+    console.log(game);
 
     game.last_turn = performance.now();
-
-    console.log(game.serialize());
   };
 
   // monkey patch this in so it can be run from the script in the HTML
@@ -43,13 +36,7 @@ $(function() {
         game.name = "AI";
         game.uuid = UUIDjs.create(1).toString();
 
-    // send the starting board to the server
-    $.ajax({
-      url: "/grid",
-      type: "PUT",
-      data: game.serialize(null, null),
-      success: function () { console.log("Game init succeeded."); }
-    });
+    console.log("init: ", game);
 
     // wrap move() so it's visible in the eval
     game.mv = function (dir) { move(this, dir); };

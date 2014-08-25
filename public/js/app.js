@@ -29,15 +29,9 @@ $(function() {
     }
 
     var new_tile_idx = game.insert();
-    $.ajax({
-      url: "/grid",
-      type: "PUT",
-      dataType: "json",
-      data: game.serialize(),
-      success: function () { console.log("XHR Succeeded."); }
-    });
 
     console.log(game);
+
     d3.select("#score-value").text(game.score);
     d3.select("#turn-id-value").text(game.sequence);
 
@@ -79,16 +73,5 @@ $(function() {
   var target = "#player1-container";
   var game = make_game(target);
       game.name = "player1";
-
-  // feeds move data back for updating the graph
-  start_websocket(game.uuid, target);
-
-  // send the starting board to the server
-  $.ajax({
-    url: "/grid",
-    type: "PUT",
-    dataType: "json",
-    data: game.serialize(null, null),
-    success: function () { console.log("Game init succeeded."); }
-  });
+  console.log(game);
 });
