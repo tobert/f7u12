@@ -57,7 +57,6 @@ func main() {
 	r.HandleFunc("/top_games/{dimension:[-_a-zA-Z0-9]+}", TopGamesHandler)
 	r.HandleFunc("/dir_counts/{game_id:[-a-f0-9]+}", DirCountsHandler)
 	r.HandleFunc("/ws/{game_id:[-a-f0-9]+}", WsHandler)
-	r.HandleFunc("/balance_board/{mac:[:0-9a-fA-F]+}", BBoardHandler)
 
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
 
